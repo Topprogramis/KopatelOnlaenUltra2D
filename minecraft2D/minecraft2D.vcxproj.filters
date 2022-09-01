@@ -1,0 +1,78 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Файлы ресурсов">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Source\include">
+      <UniqueIdentifier>{fe36c187-814f-4299-91be-24c3d248917a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game">
+      <UniqueIdentifier>{428d5d74-d5b8-4bb2-b99b-23cd43c003f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Core">
+      <UniqueIdentifier>{77d25aeb-b231-4047-a0a7-2001ed18fdbf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Block">
+      <UniqueIdentifier>{99d581e1-b88f-4afb-b1fa-c480d1f70de7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Core\Transform">
+      <UniqueIdentifier>{7f8831ed-38d1-4bb4-a933-dfcde97ce8cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Chunk">
+      <UniqueIdentifier>{3d3b39d9-f2a3-4a68-a993-893e0e4909f6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\World">
+      <UniqueIdentifier>{d0ce5b36-35cb-4bf4-b483-665df7d32549}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Core\Time">
+      <UniqueIdentifier>{71535eaf-1a98-406a-8b06-029d4eb51968}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Transform.cpp">
+      <Filter>Source\Game\Core\Transform</Filter>
+    </ClCompile>
+    <ClCompile Include="World.cpp">
+      <Filter>Source\Game\World</Filter>
+    </ClCompile>
+    <ClCompile Include="Settings.cpp">
+      <Filter>Source\include</Filter>
+    </ClCompile>
+    <ClCompile Include="TimeManage.cpp">
+      <Filter>Source\Game\Core\Time</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include.h">
+      <Filter>Source\include</Filter>
+    </ClInclude>
+    <ClInclude Include="Block.h">
+      <Filter>Source\Game\Block</Filter>
+    </ClInclude>
+    <ClInclude Include="Transform.h">
+      <Filter>Source\Game\Core\Transform</Filter>
+    </ClInclude>
+    <ClInclude Include="Chunk.hpp">
+      <Filter>Source\Game\Chunk</Filter>
+    </ClInclude>
+    <ClInclude Include="World.h">
+      <Filter>Source\Game\World</Filter>
+    </ClInclude>
+    <ClInclude Include="Time.h" />
+    <ClInclude Include="TimeManage.h">
+      <Filter>Source\Game\Core\Time</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

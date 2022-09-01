@@ -1,0 +1,8 @@
+chunk(6);pos(5,64);block(1)
+chunk(6);pos(5,64);block(1)
+chunk(6);pos(5,64);block(1)
+chunk(6);pos(5,64);block(1)
+chunk(6);pos(5,64);block(1)
+chunk(6);pos(15,61);block(0)
+chunk(6);pos(15,61);block(0)
+chunk(6);pos(15,61);block(0)

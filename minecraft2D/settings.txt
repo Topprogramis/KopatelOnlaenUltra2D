@@ -1,0 +1,11 @@
+WindowWidth=1024;
+WindowHeight=720;
+WorldSize=12;
+BlockSizeX=80;
+BlockSizeY=80;
+TextureResolutionX=128;
+TextureResolutionY=128;
+AtlasSizeX=16;
+AtlasSizeY=16;
+FixedUpdateTime=20;
+#
