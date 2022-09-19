@@ -1,4 +1,8 @@
 #include"World.h"
+#include"PhysicalBlock.h"
+#include"MusicBlock.h"
+#include"BombBlock.h"
+#include"FlyingBlock.h"
 
 BlockData World::blocks[256] = {};
 bool World::WasLoadBlocks = false;
@@ -14,54 +18,137 @@ World::World(sf::RenderWindow* window) {
 	m_atlas.loadFromFile("atlas.png");
 
 	m_transform.SetPostion(sf::Vector2f(-(chunkSizeX * Settings::blockSize.x * Settings::worldSize) / 2, 0));
-
+	
+	m_OnChunkBuilt.AddListener(std::bind(&World::OnChunkBuilt, this, std::placeholders::_1));
+	
+	Settings::world = this;
+	
 	Generate();
 
 	Load();
 }
+
 
 void World::LoadBlocks() {
 	for (int i = 0; i < 256; i++) {
 		blocks[i] = BlockData{ i };
 	}
 
-	blocks[18].isPhisical = true;
-	blocks[19].isPhisical = true;
+	blocks[8].component = new BombBlock(8,3,false);
+
+	blocks[18].component = new PhysicalComponent();
+	blocks[19].component = new PhysicalComponent();
+
+	blocks[74].component = new MusicBlock();
 
 	WasLoadBlocks = true;
 }
-
 void World::Generate() {
 	for (int i = 0; i < Settings::worldSize; i++) {
 		m_chunks[i]=Chunk(&m_atlas, Transform(sf::Vector2f(Settings::blockSize.x * chunkSizeX * i, -(Settings::blockSize.y * chunkSizeY / 2))));
+		
+		m_chunks[i].SetId(i);
 		m_chunks[i].SetWorld(&m_transform);
+
 		GenerateLastChunk(i);
 	}
 }
 
+
+std::vector<FlyingBlock*>* World::getFlyingObjectsListPtr() {
+	return &m_flyingBlocks;
+}
+void World::Interact() {
+
+	for (auto& i : m_chunks) {
+		i.Interact(sf::Mouse::getPosition(*m_window));
+	}
+}
 void World::Move(sf::Vector2f offset) {
 	m_transform.SetPostion(m_transform.GetPosition() + offset);
 }
+
 
 void World::Draw() {
 	for (int i = 0; i < Settings::worldSize; i++) {
 		m_chunks[i].Update();
 		m_chunks[i].Draw(m_window);
 	}
-}
 
+
+	std::unique_lock<std::mutex> lock(w_mutex);
+
+	for (auto& i : m_flyingBlocks) {
+		i->getShapePtr()->setPosition(i->getBlock()->getPosition()+i->getBlock()->getChunk()->getPosition()+m_transform.GetPosition());
+		m_window->draw(*i->getShapePtr());
+	}
+
+	lock.unlock();
+	condition.notify_one();
+
+
+}
 void World::FixedUpdate() {
 	for (int i = 0; i < Settings::worldSize; i++) {
 		m_chunks[i].FixedUpdate();
 	}
+	m_cv.notify_one();
 }
 
-void World::biuldBlock(sf::Vector2f pos, BlockData* bl){
+
+//block
+void World::UpdateBlocks() {
+	for (auto& i : m_chunks) {
+		i.UpdateBlocks();
+	}
+}
+
+void World::DestroyBlock(sf::Vector2f pos) {
 	for (int i = 0; i < Settings::worldSize; i++) {
 		if (m_chunks[i].GetTransform().GetPosition().x<pos.x - m_transform.GetPosition().x && m_chunks[i].GetTransform().GetPosition().x + m_chunks[i].GetTransform().GetSize().x > pos.x - m_transform.GetPosition().x &&
 			m_chunks[i].GetTransform().GetPosition().y<pos.y - m_transform.GetPosition().y && m_chunks[i].GetTransform().GetPosition().y + m_chunks[i].GetTransform().GetSize().y > pos.y - m_transform.GetPosition().y) {
 
 			auto p = m_chunks[i].FindBlock(pos);
+
+			if (m_chunks[i].GetBlock(p.x, p.y)->GetData()->id == 0)
+				return;
+
+		
+
+			BlockReplace upd;
+			upd.blockInd = 0;
+			upd.blockPos = p;
+			upd.chunkInd = i;
+
+
+			m_data.push_back(upd);
+			m_chunks[i].SetBlock(p.x, p.y, &blocks[0]);
+
+			break;
+		}
+	}
+}
+bool World::buildBlock(sf::Vector2f pos, BlockData* bl){
+	for (int i = 0; i < Settings::worldSize; i++) {
+		if (m_chunks[i].GetTransform().GetPosition().x<pos.x - m_transform.GetPosition().x && m_chunks[i].GetTransform().GetPosition().x + m_chunks[i].GetTransform().GetSize().x > pos.x - m_transform.GetPosition().x &&
+			m_chunks[i].GetTransform().GetPosition().y<pos.y - m_transform.GetPosition().y && m_chunks[i].GetTransform().GetPosition().y + m_chunks[i].GetTransform().GetSize().y > pos.y - m_transform.GetPosition().y) {
+
+			auto p = m_chunks[i].FindBlock(pos);
+			auto block = m_chunks[i].GetBlock(p.x, p.y);
+
+			auto list = m_flyingBlocks;
+			for (int i = 0; i < m_flyingBlocks.size(); i++) {
+				if (m_flyingBlocks.at(i)->getBlock()->getPosition().x + Settings::blockSize.x/2 >= block->getPosition().x &&
+					m_flyingBlocks.at(i)->getBlock()->getPosition().x <= block->getPosition().x + Settings::blockSize.x/2 &&
+					m_flyingBlocks.at(i)->getBlock()->getPosition().y + Settings::blockSize.y/2 >= block->getPosition().y &&
+					m_flyingBlocks.at(i)->getBlock()->getPosition().y <= block->getPosition().y + Settings::blockSize.y/2) {
+					return false;
+				}
+			}
+
+			if (block->GetData()->id != 0) {				
+				return false;
+			}
 
 			BlockReplace upd;
 			upd.blockInd = bl->id;
@@ -75,8 +162,32 @@ void World::biuldBlock(sf::Vector2f pos, BlockData* bl){
 			break;
 		}
 	}
+	return true;
+}
+void World::SetBlock(sf::Vector2i pos, BlockData* bl) {
+	int chunk = std::floor(pos.x / 16);
+	pos.x -= chunk * 16;
+
+	m_chunks[chunk].SetBlock(pos, bl);
+}
+Block* World::GetBlock(sf::Vector2i pos) {
+	int chunk = std::floor(pos.x / 16);
+	pos.x -= chunk * 16;
+
+	return m_chunks[chunk].GetBlock(pos.x,pos.y);
 }
 
+//chunks
+bool World::IsAllChunksBuild() {
+	for (auto& i : m_chunks) {
+		if (i.IsChange())
+			return false;
+	}
+	return true;
+}
+void World::OnChunkBuilt(Chunk* chunk) {
+	m_cv.notify_one();
+}
 void World::GenerateLastChunk(int ind) {
 	Chunk* chunk = &m_chunks[ind];
 
@@ -99,10 +210,16 @@ void World::GenerateLastChunk(int ind) {
 			chunk->SetBlock(x, y, &blocks[blockId]);
 		}
 	}
-
-
+}
+void World::BuildChunks() {
+	for (auto& i : m_chunks) {
+		i.BuildChunk();
+	}
+	//m_cv.notify_one();
+	
 }
 
+//world saves
 void World::Save() {
 	std::ofstream saveFile;
 
@@ -128,7 +245,6 @@ void World::Save() {
 
 
 }
-
 void World::Load() {
 	std::ifstream saveFile;
 
