@@ -16,9 +16,11 @@ public:
 
 		m_mainThread=std::thread(std::bind(&Program::Loop,this));
 		m_fixedUpdateThread=std::thread(std::bind(&Program::FixedUpdate, this));
+		m_buildChunkThread = std::thread(std::bind(&Program::ChunkBlocksUpdate, this));
 
 		m_mainThread.join();
 		m_fixedUpdateThread.join();
+		m_buildChunkThread.join();
 
 		End();
 	}
@@ -54,9 +56,8 @@ public:
 				m_world->Move(sf::Vector2f(-1000, 0) * m_time.DeltaTime());
 			}
 
+
 			m_window.clear();
-
-
 
 			m_world->Draw();
 
@@ -65,6 +66,7 @@ public:
 			m_window.display();
 
 			m_time.Update();
+
 		}
 
 		m_world->Save();
@@ -76,13 +78,36 @@ public:
 	void FixedUpdate() {
 		float time = 0.0f;
 
+		bool IsDown = false;
+
 		while (1) {
 			std::this_thread::sleep_for(std::chrono::milliseconds(Settings::fixedUpdateTime));
 			if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
-				m_world->biuldBlock((sf::Vector2f)sf::Mouse::getPosition(m_window), &World::blocks[0]);
-			else if (sf::Mouse::isButtonPressed(sf::Mouse::Right))
-				m_world->biuldBlock((sf::Vector2f)sf::Mouse::getPosition(m_window), &World::blocks[m_selectId]);
+				m_world->DestroyBlock((sf::Vector2f)sf::Mouse::getPosition(m_window));
+			if (sf::Mouse::isButtonPressed(sf::Mouse::Right)) {
+				if (!m_world->buildBlock((sf::Vector2f)sf::Mouse::getPosition(m_window), &World::blocks[m_selectId]) && !IsDown) {
+					m_world->Interact();
+				}
+				IsDown = true;
+			}
+			else if (!sf::Mouse::isButtonPressed(sf::Mouse::Right)) {
+				IsDown = false;
+			}
 			m_world->FixedUpdate();
+
+			if (m_interact) {
+				//m_world->Interact();
+				m_interact = false;
+			}
+		}
+	}
+
+	void ChunkBlocksUpdate() {
+		float time = 0.0f;
+
+		while (1) {		
+			std::this_thread::sleep_for(std::chrono::milliseconds(Settings::fixedUpdateTime));
+			m_world->UpdateBlocks();
 		}
 	}
 
@@ -90,8 +115,8 @@ public:
 		if (e.type == sf::Event::Closed) {
 			m_window.close();
 		}
-		else if (e.type == sf::Event::MouseButtonPressed) {
-			
+		else if (e.type == sf::Event::KeyPressed && e.key.code == sf::Keyboard::E) {
+			m_world->Interact();
 		}
 		else if (e.type == sf::Event::MouseWheelScrolled) {
 			SelectNewBlock(e);
@@ -181,12 +206,14 @@ private:
 
 	int m_selectId = 1;
 
-	bool m_leftClick = false, m_rightClick = false;
+	bool m_interact = false;
+
+	std::mutex m_mutex;
 
 
 	World* m_world;
 
-	std::thread m_mainThread, m_fixedUpdateThread;
+	std::thread m_mainThread, m_fixedUpdateThread,m_buildChunkThread;
 };
 
 int main() {

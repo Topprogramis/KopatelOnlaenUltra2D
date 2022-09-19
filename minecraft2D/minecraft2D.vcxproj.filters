@@ -33,6 +33,12 @@
     <Filter Include="Source\Game\Core\Time">
       <UniqueIdentifier>{71535eaf-1a98-406a-8b06-029d4eb51968}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Block\Interactiable">
+      <UniqueIdentifier>{7aecddbc-b6e7-435f-a582-9c018bc0c08d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Core\Action">
+      <UniqueIdentifier>{c23a03d0-674c-470c-aaba-3b1ea791468c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -70,6 +76,21 @@
     <ClInclude Include="Time.h" />
     <ClInclude Include="TimeManage.h">
       <Filter>Source\Game\Core\Time</Filter>
+    </ClInclude>
+    <ClInclude Include="PhysicalBlock.h">
+      <Filter>Source\Game\Block\Interactiable</Filter>
+    </ClInclude>
+    <ClInclude Include="MusicBlock.h">
+      <Filter>Source\Game\Block\Interactiable</Filter>
+    </ClInclude>
+    <ClInclude Include="BombBlock.h">
+      <Filter>Source\Game\Block\Interactiable</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Topprogramis\XEr-engine\3D_c++_game\Action.h">
+      <Filter>Source\Game\Core\Action</Filter>
+    </ClInclude>
+    <ClInclude Include="FlyingBlock.h">
+      <Filter>Source\Game\Block\Interactiable</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
