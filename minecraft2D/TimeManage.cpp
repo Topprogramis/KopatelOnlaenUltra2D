@@ -1,5 +1,7 @@
 #include"TimeManage.h"
 
+Time* Time::globalTimeManager = nullptr;
+
 
 Time::Time() {
 
