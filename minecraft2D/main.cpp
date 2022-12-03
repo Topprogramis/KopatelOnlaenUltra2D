@@ -1,5 +1,6 @@
 #include "World.h"
 #include"TimeManage.h"
+#include"Inventory.h"
 
 class Program {
 public:
@@ -13,6 +14,8 @@ public:
 		
 
 		Start();
+
+		Time::globalTimeManager = &m_time;
 
 		m_mainThread=std::thread(std::bind(&Program::Loop,this));
 		m_fixedUpdateThread=std::thread(std::bind(&Program::FixedUpdate, this));
@@ -36,11 +39,12 @@ public:
 	void Loop() {
 		CreateWindow();
 
-		while (m_window.isOpen()) {
+		while (m_run || m_fixedRun || m_chunkRun) {
 
 			sf::Event e;
 			while (m_window.pollEvent(e)) {
 				ProcessEvent(e);
+				m_inventory.PollEvent(e,&m_window);
 			}
 
 			if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
@@ -61,7 +65,8 @@ public:
 
 			m_world->Draw();
 
-			m_window.draw(m_selectBlock);
+			m_inventory.Draw(&m_window);
+
 
 			m_window.display();
 
@@ -69,7 +74,13 @@ public:
 
 		}
 
-		m_world->Save();
+		
+
+	//	m_world->Save();
+
+		m_window.close();
+
+		//d::terminate();
 	}
 
 	void Update() {
@@ -80,12 +91,12 @@ public:
 
 		bool IsDown = false;
 
-		while (1) {
+		while (m_run) {
 			std::this_thread::sleep_for(std::chrono::milliseconds(Settings::fixedUpdateTime));
-			if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
+			if (sf::Mouse::isButtonPressed(sf::Mouse::Left) && !m_inventory.isOpen())
 				m_world->DestroyBlock((sf::Vector2f)sf::Mouse::getPosition(m_window));
-			if (sf::Mouse::isButtonPressed(sf::Mouse::Right)) {
-				if (!m_world->buildBlock((sf::Vector2f)sf::Mouse::getPosition(m_window), &World::blocks[m_selectId]) && !IsDown) {
+			if (sf::Mouse::isButtonPressed(sf::Mouse::Right) && !m_inventory.isOpen()) {
+				if (!m_world->buildBlock((sf::Vector2f)sf::Mouse::getPosition(m_window), &World::blocks[m_inventory.getSelect().id]) && !IsDown) {
 					m_world->Interact();
 				}
 				IsDown = true;
@@ -95,53 +106,78 @@ public:
 			}
 			m_world->FixedUpdate();
 
+			m_inventory.FixedUpdate();
+
 			if (m_interact) {
 				//m_world->Interact();
 				m_interact = false;
 			}
 		}
+
+		m_fixedRun = false;
+
+		std::cout << "FixedUpdate end" << std::endl;
 	}
 
 	void ChunkBlocksUpdate() {
 		float time = 0.0f;
 
-		while (1) {		
+		while (m_run) {		
 			std::this_thread::sleep_for(std::chrono::milliseconds(Settings::fixedUpdateTime));
 			m_world->UpdateBlocks();
 		}
+
+		m_chunkRun = false;
+
+		std::cout << "chunk update end" << std::endl;
 	}
 
 	void ProcessEvent(sf::Event e) {
 		if (e.type == sf::Event::Closed) {
-			m_window.close();
-		}
-		else if (e.type == sf::Event::KeyPressed && e.key.code == sf::Keyboard::E) {
-			m_world->Interact();
-		}
-		else if (e.type == sf::Event::MouseWheelScrolled) {
-			SelectNewBlock(e);
+			m_run = false;
 		}
 	}
 
 	void SelectNewBlock(sf::Event e) {
-		if (m_selectId + e.mouseWheelScroll.delta < 0) {
-			m_selectId = 255;
-		}
-		else if (m_selectId + e.mouseWheelScroll.delta > 255) {
-			m_selectId = 0;
-		}
-		else {
-			m_selectId += e.mouseWheelScroll.delta;
+	}
+	void LoadItems() {
+		std::fstream settingsF;
+		settingsF.open("items.txt");
+
+		std::string name = "";
+
+		while (settingsF.peek() != '#') {
+			char ch = settingsF.get();
+
+			if (ch == '\n')
+				continue;
+
+			if (ch == ';') {
+				m_words.push_back(name);
+				name = "";
+				continue;
+			}
+
+			name += ch;
 		}
 
-
-		m_selectBlock.setTextureRect(sf::IntRect(Settings::textureResolution.x * (m_selectId % Settings::atlasSize.x), Settings::textureResolution.y * std::floor(m_selectId / Settings::atlasSize.y), Settings::textureResolution.x, Settings::textureResolution.y));
+		
 	}
 	void InitGui() {
-		m_selectBlock.setSize(sf::Vector2f(100, 100));
 
 		m_atlas.loadFromFile("atlas.png");
-		m_selectBlock.setTexture(&m_atlas);
+
+		LoadItems();
+
+		m_inventory.Create(Transform(sf::Vector2f(200, 100), sf::Vector2f(600, 600)),8);
+
+		for (int i = 0; i < 256; i++) {
+			std::string name = "None";
+
+			if (i < m_words.size())
+				name = m_words[i];
+			m_inventory.AddItem(Item{ &m_atlas,i, name });
+		}
 	}
 	void CreateWindow() {
 		m_window.create(sf::VideoMode(m_settings["WindowWidth"], m_settings["WindowHeight"]), "minecraft2D");
@@ -155,9 +191,13 @@ public:
 		std::string name;
 		std::string value;
 
+		std::string seed;
+
+
 		bool initName = false;
 		while (settingsF.peek() != '#') {
 			char ch = settingsF.get();
+
 			if (ch == '=') {
 				initName = true;
 			}
@@ -182,6 +222,13 @@ public:
 
 		Settings::worldSize = m_settings["WorldSize"];
 
+		Settings::persistence = m_settings["Persistence"];
+		Settings::frequency = m_settings["Frequency"];
+		Settings::amplitude = m_settings["Amplitude"];
+		Settings::octaves = m_settings["Octaves"];
+
+		Settings::seed = m_settings["Seed"];
+
 		Settings::blockSize.x = m_settings["BlockSizeX"];
 		Settings::blockSize.y = m_settings["BlockSizeY"];
 
@@ -199,16 +246,21 @@ private:
 	sf::RenderWindow m_window;
 	Time m_time;
 
+	Inventory m_inventory;
+
 	std::map<std::string, int> m_settings;
 
-	sf::RectangleShape m_selectBlock;
 	sf::Texture m_atlas;
-
-	int m_selectId = 1;
 
 	bool m_interact = false;
 
+	bool m_run = true;
+
+	bool m_fixedRun = true, m_chunkRun = true;
+
 	std::mutex m_mutex;
+
+	std::vector<std::string> m_words;
 
 
 	World* m_world;

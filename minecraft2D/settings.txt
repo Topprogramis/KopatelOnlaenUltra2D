@@ -1,3 +1,8 @@
+Persistence=1;
+Frequency=3;
+Amplitude=2;
+Octaves=10;
+Seed=43;
 WindowWidth=1024;
 WindowHeight=720;
 WorldSize=12;

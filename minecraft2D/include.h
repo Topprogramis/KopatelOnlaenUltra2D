@@ -21,9 +21,18 @@ public:
 	static int threadCount;
 	static int fixedUpdateTime;
 
+	static int seed;
+
+	static int persistence;
+	static int frequency;
+	static int amplitude;
+	static int octaves;
+
 	static sf::Vector2f blockSize;
 	static sf::Vector2f textureResolution ;
 	static sf::Vector2i atlasSize;
 
 	static World* world;
+
+
 };

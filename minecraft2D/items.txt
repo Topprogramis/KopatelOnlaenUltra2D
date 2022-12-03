@@ -1,0 +1,17 @@
+air;
+stone;
+ground;
+grass;
+boards;
+granite;
+granite;
+bricks;
+tnt;
+tnt;
+boards;
+web;
+flower;
+flower;
+air;
+seed;
+#

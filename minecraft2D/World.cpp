@@ -3,6 +3,7 @@
 #include"MusicBlock.h"
 #include"BombBlock.h"
 #include"FlyingBlock.h"
+#include"Perlin.hpp"
 
 BlockData World::blocks[256] = {};
 bool World::WasLoadBlocks = false;
@@ -110,8 +111,6 @@ void World::DestroyBlock(sf::Vector2f pos) {
 
 			auto p = m_chunks[i].FindBlock(pos);
 
-			if (m_chunks[i].GetBlock(p.x, p.y)->GetData()->id == 0)
-				return;
 
 		
 
@@ -191,24 +190,32 @@ void World::OnChunkBuilt(Chunk* chunk) {
 void World::GenerateLastChunk(int ind) {
 	Chunk* chunk = &m_chunks[ind];
 
-	for (int y = 0; y < chunkSizeY; y++) {
-		for (int x = 0; x < chunkSizeX; x++) {
-			int blockId =0;
-			
-			if (y > 72) {
+	auto noise = PerlinNoise(Settings::persistence, Settings::frequency, Settings::amplitude, Settings::octaves, Settings::seed);
+
+	int oldHeight = 70;
+
+	for (int x = 0; x < chunkSizeX; x++) {
+		int grassHeight;
+		for (int y = 0; y < chunkSizeY; y++) {
+			int blockId = 0;
+
+			grassHeight = int(noise.GetHeight(x+ind*16, 0)) + oldHeight;
+
+			if (y > grassHeight + 4) {
 				blockId = 1;
 			}
-			else if (y == 68) {
-				blockId = 3;
-			}
-			else if (y > 68) {
+			else if (y > grassHeight) {
 				blockId = 2;
+			}
+			else if (y == grassHeight) {
+				blockId = 3;
 			}
 			
 
 
 			chunk->SetBlock(x, y, &blocks[blockId]);
 		}
+		oldHeight = grassHeight;
 	}
 }
 void World::BuildChunks() {
@@ -231,7 +238,30 @@ void World::Save() {
 
 	//saveFile.clear();
 
+	std::vector<BlockReplace> saved;
+
+
+
+	std::reverse(m_data.begin(),m_data.end());
+
 	for (auto& i : m_data) {
+
+		bool skip = false;
+	
+		for (auto& j : saved) {
+			if (j.blockPos == i.blockPos && j.chunkInd == i.chunkInd) {
+				skip = true;
+			}
+		}
+
+		if (skip) {
+			continue;
+		}
+
+
+			
+
+
 		std::string data = "";
 
 		data += "chunk(" + std::to_string(i.chunkInd) + ");";
@@ -239,9 +269,13 @@ void World::Save() {
 		data += "block(" + std::to_string(i.blockInd) + ")\n";
 
 		saveFile << data;
+
+		saved.push_back(i);	
 	}
 
 	saveFile.close();
+
+	std::cout<<"world was saved"<<std::endl;
 
 
 }
@@ -313,11 +347,7 @@ void World::Load() {
 			}
 		}
 
-		for (int i = 0; i < m_data.size(); i++) {
-			if (m_data[i].blockPos == pos && m_data[i].chunkInd == chunkId) {
-				m_data[i] = { chunkId,pos,blockId };
-			}
-		}
+		m_data.push_back(BlockReplace{ chunkId,pos,blockId });
 		m_chunks[chunkId].SetBlock(pos.x, pos.y, &blocks[blockId]);
 	}
 }

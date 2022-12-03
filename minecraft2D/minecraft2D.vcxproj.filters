@@ -39,6 +39,12 @@
     <Filter Include="Source\Game\Core\Action">
       <UniqueIdentifier>{c23a03d0-674c-470c-aaba-3b1ea791468c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Core\Ui">
+      <UniqueIdentifier>{ac32462e-b009-4c29-bd4c-6690a17b597a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Core\Random">
+      <UniqueIdentifier>{b3555545-ab4b-4f36-9af0-9ee9a9b9ee77}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -58,6 +64,12 @@
     </ClCompile>
     <ClCompile Include="TimeManage.cpp">
       <Filter>Source\Game\Core\Time</Filter>
+    </ClCompile>
+    <ClCompile Include="Inventory.cpp">
+      <Filter>Source\Game\Core\Ui</Filter>
+    </ClCompile>
+    <ClCompile Include="Perlin.cpp">
+      <Filter>Source\Game\Core\Random</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -94,6 +106,12 @@
     </ClInclude>
     <ClInclude Include="FlyingBlock.h">
       <Filter>Source\Game\Block\Interactiable</Filter>
+    </ClInclude>
+    <ClInclude Include="Inventory.h">
+      <Filter>Source\Game\Core\Ui</Filter>
+    </ClInclude>
+    <ClInclude Include="Perlin.hpp">
+      <Filter>Source\Game\Core\Random</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
