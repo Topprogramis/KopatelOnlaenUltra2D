@@ -15,4 +15,6 @@ sf::Vector2f Settings::Settings::blockSize = { 80,80 };
 sf::Vector2f Settings::Settings::textureResolution = {128,128 };
 sf::Vector2i Settings::Settings::atlasSize = { 16,16 };
 
+sf::Vector2f Settings::Settings::windowSize = { 800,600 };
+
 World* Settings::world = nullptr;

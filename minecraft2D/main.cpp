@@ -238,6 +238,9 @@ public:
 		Settings::atlasSize.x = m_settings["AtlasSizeX"];
 		Settings::atlasSize.y = m_settings["AtlasSizeY"];
 
+		Settings::windowSize.x = m_settings["WindowWidth"];
+		Settings::windowSize.y = m_settings["WindowHeight"];
+
 		Settings::fixedUpdateTime = m_settings["FixedUpdateTime"];
 	}
 

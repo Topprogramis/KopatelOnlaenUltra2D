@@ -55,7 +55,9 @@ private:
 
 	std::condition_variable m_cv;
 
-	sf::Texture m_atlas;
+	sf::RectangleShape m_skyBoxShape;
+
+	sf::Texture m_atlas, m_skyBoxTx;
 
 	Action<Chunk*> m_OnChunkBuilt;
 

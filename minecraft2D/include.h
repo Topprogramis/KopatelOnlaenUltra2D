@@ -32,6 +32,8 @@ public:
 	static sf::Vector2f textureResolution ;
 	static sf::Vector2i atlasSize;
 
+	static sf::Vector2f windowSize;
+
 	static World* world;
 
 

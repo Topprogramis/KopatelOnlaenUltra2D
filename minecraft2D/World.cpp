@@ -17,6 +17,10 @@ World::World(sf::RenderWindow* window) {
 	m_chunks.resize(Settings::worldSize);
 
 	m_atlas.loadFromFile("atlas.png");
+	m_skyBoxTx.loadFromFile("sky.png");
+
+	m_skyBoxShape.setSize(Settings::windowSize);
+	m_skyBoxShape.setTexture(&m_skyBoxTx);
 
 	m_transform.SetPostion(sf::Vector2f(-(chunkSizeX * Settings::blockSize.x * Settings::worldSize) / 2, 0));
 	
@@ -71,6 +75,8 @@ void World::Move(sf::Vector2f offset) {
 
 
 void World::Draw() {
+	m_window->draw(m_skyBoxShape);
+
 	for (int i = 0; i < Settings::worldSize; i++) {
 		m_chunks[i].Update();
 		m_chunks[i].Draw(m_window);

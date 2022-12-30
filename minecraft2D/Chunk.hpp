@@ -230,7 +230,7 @@ private:
 
 	void OnChange() {
 
-		m_tx.clear(sf::Color::Blue);
+		m_tx.clear(sf::Color(0,0,0,0));
 
 		sf::RectangleShape shape (Settings::blockSize);
 		shape.setTexture(m_atlas);
