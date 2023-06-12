@@ -6,7 +6,9 @@ public:
 	Transform(sf::Vector2f pos = sf::Vector2f(0, 0), sf::Vector2f size = sf::Vector2f(1, 1));
 
 	void SetPostion(sf::Vector2f pos);
+	void SetOpenGlPosition(sf::Vector2f pos);
 	sf::Vector2f GetPosition();
+	sf::Vector2f GetOpenGlPosition();
 
 	void Move(sf::Vector2f offset);
 

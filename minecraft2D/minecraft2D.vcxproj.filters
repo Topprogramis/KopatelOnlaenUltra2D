@@ -45,6 +45,69 @@
     <Filter Include="Source\Game\Core\Random">
       <UniqueIdentifier>{b3555545-ab4b-4f36-9af0-9ee9a9b9ee77}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Core\Physics">
+      <UniqueIdentifier>{852eccb0-64f4-418f-a938-48a03d7b2df9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Core\Tringalution">
+      <UniqueIdentifier>{40d44d4b-d561-4fdd-8fdb-2540b0b29c2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Player">
+      <UniqueIdentifier>{2aae067f-8afe-49fc-b549-c05ffb61557a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Core\CollisionEvents">
+      <UniqueIdentifier>{f3236881-69e4-4271-b762-1f574e2126c1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Player\BlockController">
+      <UniqueIdentifier>{aebd587b-395b-4ad2-9cdc-f20b410f8d29}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Core\Ui\GuiManager">
+      <UniqueIdentifier>{0cdd2554-9f83-4e94-9e50-9bba2d55a7f2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Core\Ui\UiElements">
+      <UniqueIdentifier>{132e3310-5a01-4eaf-b12f-b351ea6f3159}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Core\Ui\UiElements\Button">
+      <UniqueIdentifier>{0eda74b4-fceb-4186-9187-75694458d34f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Core\Ui\UiElements\Button\ButtonAnimation">
+      <UniqueIdentifier>{63423c44-4b2e-46f0-a3af-92f0f7f5fe00}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Core\Ui\UiElements\Canvas">
+      <UniqueIdentifier>{0ebfef7a-4d17-4167-bb73-5b6368bb282c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Core\Ui\UiElements\Group">
+      <UniqueIdentifier>{7d7532ac-d313-442e-9792-a62488c4eaa9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Core\Ui\UiElements\InputBox">
+      <UniqueIdentifier>{1b4b5110-30e4-4dd4-ac75-659eae1d15ac}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Core\Ui\UiElements\TextBlock">
+      <UniqueIdentifier>{52b7c420-4583-4070-a1df-0ba2be15df49}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Core\Ui\UiEvents">
+      <UniqueIdentifier>{02b3a4ab-b726-464d-ad01-c94d369435db}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Core\Ui\Utilits">
+      <UniqueIdentifier>{7ed26d05-9b36-42bb-9094-eb8b43a07313}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Core\Ui\Utilits\Convertor">
+      <UniqueIdentifier>{ee5bf17d-8913-4b4d-b596-0679d4b84393}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Core\Ui\Utilits\RectTransform">
+      <UniqueIdentifier>{2f4e69dc-3d2d-4014-9e23-5924c3b1e63e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Core\Ui\UiElements\UiObject">
+      <UniqueIdentifier>{0e84eb88-6226-4a8c-9304-db34a10af4cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Core\Ui\UiElements\ScrollBar">
+      <UniqueIdentifier>{a0ffa2a6-63d6-48c0-9bf8-b9c147872d0d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Core\Ui\UiElements\Inventory">
+      <UniqueIdentifier>{5cfbd7b5-7b5e-4f04-b456-e8eb63481462}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Core\Ui\Utilits\Animation">
+      <UniqueIdentifier>{4f5c4d4a-5601-4367-aa47-7b980ac86310}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -62,11 +125,35 @@
     <ClCompile Include="TimeManage.cpp">
       <Filter>Source\Game\Core\Time</Filter>
     </ClCompile>
-    <ClCompile Include="Inventory.cpp">
-      <Filter>Source\Game\Core\Ui</Filter>
-    </ClCompile>
     <ClCompile Include="Perlin.cpp">
       <Filter>Source\Game\Core\Random</Filter>
+    </ClCompile>
+    <ClCompile Include="Chunk.cpp">
+      <Filter>Source\Game\Chunk</Filter>
+    </ClCompile>
+    <ClCompile Include="Triangulate.cpp">
+      <Filter>Source\Game\Core\Tringalution</Filter>
+    </ClCompile>
+    <ClCompile Include="Player.cpp">
+      <Filter>Source\Game\Player</Filter>
+    </ClCompile>
+    <ClCompile Include="BlockController.cpp">
+      <Filter>Source\Game\Player\BlockController</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\ColorButtonAnimation.cpp">
+      <Filter>Source\Game\Core\Ui\UiElements\Button\ButtonAnimation</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\TextBlock.cpp">
+      <Filter>Source\Game\Core\Ui\UiElements\TextBlock</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\Convertor.cpp">
+      <Filter>Source\Game\Core\Ui\Utilits\Convertor</Filter>
+    </ClCompile>
+    <ClCompile Include="Inventory.cpp">
+      <Filter>Source\Game\Core\Ui\UiElements\Inventory</Filter>
+    </ClCompile>
+    <ClCompile Include="Animator.cpp">
+      <Filter>Source\Game\Core\Ui\Utilits\Animation</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -104,11 +191,80 @@
     <ClInclude Include="FlyingBlock.h">
       <Filter>Source\Game\Block\Interactiable</Filter>
     </ClInclude>
-    <ClInclude Include="Inventory.h">
-      <Filter>Source\Game\Core\Ui</Filter>
-    </ClInclude>
     <ClInclude Include="Perlin.hpp">
       <Filter>Source\Game\Core\Random</Filter>
+    </ClInclude>
+    <ClInclude Include="ContactListener.hpp">
+      <Filter>Source\Game\Core\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Triangulate.h">
+      <Filter>Source\Game\Core\Tringalution</Filter>
+    </ClInclude>
+    <ClInclude Include="Player.hpp">
+      <Filter>Source\Game\Player</Filter>
+    </ClInclude>
+    <ClInclude Include="CollisionEvents.hpp">
+      <Filter>Source\Game\Core\CollisionEvents</Filter>
+    </ClInclude>
+    <ClInclude Include="BlockController.h">
+      <Filter>Source\Game\Player\BlockController</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\GuiManager.hpp">
+      <Filter>Source\Game\Core\Ui\GuiManager</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\Button.hpp">
+      <Filter>Source\Game\Core\Ui\UiElements\Button</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\ButtonAnimation.hpp">
+      <Filter>Source\Game\Core\Ui\UiElements\Button\ButtonAnimation</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\ColorButtonAnimatio.hpp">
+      <Filter>Source\Game\Core\Ui\UiElements\Button\ButtonAnimation</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\Canvas.hpp">
+      <Filter>Source\Game\Core\Ui\UiElements\Canvas</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\CanvasObject.hpp">
+      <Filter>Source\Game\Core\Ui\UiElements\Canvas</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\Group.hpp">
+      <Filter>Source\Game\Core\Ui\UiElements\Group</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\InputBox.hpp">
+      <Filter>Source\Game\Core\Ui\UiElements\InputBox</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\TextBlock.h">
+      <Filter>Source\Game\Core\Ui\UiElements\TextBlock</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\UiElement.hpp">
+      <Filter>Source\Game\Core\Ui\UiElements</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\UiEvents.hpp">
+      <Filter>Source\Game\Core\Ui\UiEvents</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\Convertor.h">
+      <Filter>Source\Game\Core\Ui\Utilits\Convertor</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\RectTransform.hpp">
+      <Filter>Source\Game\Core\Ui\Utilits\RectTransform</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\RectTransformSpace.hpp">
+      <Filter>Source\Game\Core\Ui\Utilits\RectTransform</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\UiObject.hpp">
+      <Filter>Source\Game\Core\Ui\UiElements\UiObject</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\Math.hpp">
+      <Filter>Source\Game\Core\Ui\Utilits</Filter>
+    </ClInclude>
+    <ClInclude Include="Inventory.h">
+      <Filter>Source\Game\Core\Ui\UiElements\Inventory</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\Animator.hpp">
+      <Filter>Source\Game\Core\Ui\Utilits\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Program.hpp">
+      <Filter>Source</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

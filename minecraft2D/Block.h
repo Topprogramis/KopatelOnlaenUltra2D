@@ -54,6 +54,16 @@ public:
 		return m_chunk;
 	}
 
+	inline void AddBreakStage(float step) {
+		m_breakStage += step;
+	}
+	inline float GetBreakStage() {
+		return m_breakStage;
+	}
+	inline void ResetBreakStage() {
+		m_breakStage = 0;
+	}
+
 	inline void SetData(BlockData* data) {	
 		m_data = data;
 
@@ -86,7 +96,7 @@ public:
 		m_chunkPosition = pos;
 	}
 	inline sf::Vector2i getChunkPosition() {
-		return m_chunkPosition;
+ 		return m_chunkPosition;
 	}
 
 	inline bool IsFly() {
@@ -108,7 +118,7 @@ private:
 	Chunk* m_chunk;
 
 	bool m_isFly = false;
-
+	float m_breakStage = 0;
 
 };
 

@@ -1,6 +1,7 @@
 #pragma once
 #include"Action.h"
 #include"Chunk.hpp"
+#include"Player.hpp"
 
 struct BlockReplace {
 	int chunkInd;
@@ -14,12 +15,17 @@ public:
 
 	void LoadBlocks();
 
+	Chunk* getChunk(int chunkId);
+
 	void Generate();
 
 	void BuildChunks();
 
-	bool buildBlock(sf::Vector2f pos, BlockData* bl);
-	void DestroyBlock(sf::Vector2f pos);
+	Block* findBlock(sf::Vector2f pos);
+
+	bool buildBlock(Block* currentBl, BlockData* bl);
+	void DestroyBlock(Block* currentBl);
+
 	void SetBlock(sf::Vector2i pos, BlockData* bl);
 	Block* GetBlock(sf::Vector2i pos);
 
@@ -30,7 +36,9 @@ public:
 	void FixedUpdate();
 
 	void UpdateBlocks();
-	void Interact();
+	void Interact(Block* block);
+
+	void PhysicUpdate();
 
 	bool IsAllChunksBuild();
 
@@ -39,14 +47,22 @@ public:
 	void Save();
 	void Load();
 
+	Player* getPlayer();
+
+	b2Body* creatBody(b2BodyDef* def);
+	b2Joint* creatJoint(b2JointDef* def);
+
 	static BlockData blocks[256];
 	static bool WasLoadBlocks;
 
 	std::condition_variable condition;
 	std::mutex w_mutex;
 
+	sf::VertexArray m_vertexArray;
+
+	Action<BlockData*> OnBlockBreak;
+
 private:
-	Transform m_transform;
 	sf::RenderWindow* m_window;
 
 	std::vector<BlockReplace> m_data = {};
@@ -59,9 +75,12 @@ private:
 
 	sf::Texture m_atlas, m_skyBoxTx;
 
-	Action<Chunk*> m_OnChunkBuilt;
+	Action<Chunk*> m_OnChunkBuild;
 
+	b2World* m_physicalWorld;
+
+	Player* m_player;
 
 	void GenerateLastChunk(int ind);
-	void OnChunkBuilt(Chunk* chunk);
+	void OnChunkBuild(Chunk* chunk);
 };

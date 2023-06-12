@@ -3,6 +3,7 @@
 #include"Chunk.hpp"
 #include"Transform.h"
 #include"Action.h"
+#include"Triangulate.h"
 
 class Chunk {
 public:
@@ -12,8 +13,8 @@ public:
 		m_transform = transform;
 
 
-		m_tx.create(transform.GetSize().x, transform.GetSize().y);
-		m_shape = sf::RectangleShape(transform.GetSize());
+		//m_tx.create(transform.GetSize().x, transform.GetSize().y);
+		//m_shape = sf::RectangleShape(transform.GetSize());
 
 		m_atlas = atlas;
 
@@ -24,22 +25,12 @@ public:
 				m_blocks[y][x].setChunkPosition(sf::Vector2i(x, y));
 			}
 		}
-
-
-		OnChange();
 	} 
 	Chunk(const Chunk& chunk) {
 		this->m_transform = chunk.m_transform;
 		this->m_atlas = chunk.m_atlas;
 
 		m_transform.SetSize(sf::Vector2f(Settings::blockSize.x * chunkSizeX, Settings::blockSize.y * chunkSizeY));
-
-		m_tx.create(m_transform.GetSize().x, m_transform.GetSize().y);
-		m_shape.setSize(m_transform.GetSize());
-
-
-
-		Change();
 	}
 
 	void operator=(const Chunk& chunk) {
@@ -47,16 +38,9 @@ public:
 		this->m_atlas = chunk.m_atlas;
 
 		m_transform.SetSize(sf::Vector2f(Settings::blockSize.x * chunkSizeX, Settings::blockSize.y *chunkSizeY));
+    }
 
-		m_tx.create(m_transform.GetSize().x, m_transform.GetSize().y);
-		m_shape.setSize(m_transform.GetSize());
-
-
-
-
-		Change();
-   }
-
+	//chunk id in world
 	void SetId(int id) {
 		m_id = id;
 	}
@@ -64,13 +48,18 @@ public:
 		return m_id;
 	}
 
+	//init
+	void Init() {
+		Change();
+	}
+
+	//transform
 	Transform& GetTransform() {
 		return m_transform;
 	}
 	sf::Vector2f getPosition() {
 		return m_transform.GetPosition();
 	}
-
 	void SetWorld(Transform* world) {
 		m_world = world;
 	}
@@ -78,13 +67,18 @@ public:
 		return m_world;
 	}
 	
+	//texture
 	sf::Texture* getAtlas() {
 		return m_atlas;
 	}
 
+	//main
 	void Draw(sf::RenderWindow* window) {
-		m_shape.setPosition(m_transform.GetPosition() + m_world->GetPosition());
-		window->draw(m_shape);
+		sf::RenderStates states;
+		states.texture = m_atlas;
+		states.transform.translate(m_transform.GetPosition() + m_world->GetPosition());
+
+		window->draw(m_vertexArray, states);
 	}
 	void Update() {
 		BuildChunk();
@@ -93,6 +87,7 @@ public:
 
 	}
 
+	//chunk change
 	void Change() {
 		std::unique_lock<std::mutex> lock(m_mutex);
 		
@@ -105,15 +100,20 @@ public:
 		return m_OnChnange;
 	}
 
+	//col change
+	void ChangeCol() {
+		std::unique_lock<std::mutex> lock(m_mutex2);
 
-	void Interact(sf::Vector2i pos) {
-		auto blockPos = FindBlock(sf::Vector2f(pos));
-		auto block = &m_blocks[blockPos.y][blockPos.x];
-			if(block->GetData()->component!=nullptr)
-				block->component->OnInteract(block, this);
+		m_OnCollisionChange = true;
 
+		lock.unlock();
+		m_conv2.notify_one();
+	}
+	bool IsColChange() {
+		return m_OnCollisionChange;
 	}
 
+	//finding blocks
 	sf::Vector2i FindBlock(sf::Vector2f pos) {
 		for (int y = 0; y < chunkSizeY; y++) {
 			for (int x = 0; x < chunkSizeX; x++) {
@@ -153,11 +153,13 @@ public:
 		return {0,0};
 	}
 
+	//block operation
 	void SetBlock(int x, int y, BlockData* block) {
 		m_blocks[y][x].SetData(block);
 
 		if (m_blocks[y][x].component != nullptr)
 			m_interactiableBlocks.push_back(&m_blocks[y][x]);
+
 		Change();
 	}
 	void SetBlock(sf::Vector2i pos, BlockData* block) {
@@ -178,6 +180,7 @@ public:
 		return &m_blocks[y][x];
 	}
 
+	//chunk rebilding
 	void BuildChunk() {
 		if (m_OnChnange) {
 			std::unique_lock<std::mutex> lock(m_mutex);
@@ -192,6 +195,19 @@ public:
 		}
 
 	}
+
+	//physics
+	void PhysicUpdate() {
+		if (m_OnCollisionChange) {
+			std::unique_lock<std::mutex> lock(m_mutex2);
+
+			OnCollisionChange();
+
+			lock.unlock();
+			m_OnCollisionChange = false;
+		}
+	}
+	//update interact blcoks
 	void UpdateBlocks() {
 		for (int i = 0; i < m_interactiableBlocks.size(); i++) {
 			if (m_interactiableBlocks[i]->component)
@@ -201,7 +217,6 @@ public:
 
 		}
 	}
-
 
 	std::vector<Block*>* getInteractibleBlockListPtr() {
 		return &m_interactiableBlocks;
@@ -213,41 +228,54 @@ private:
 
 	int m_id;
 
+	//drawing
 	sf::Texture* m_atlas;
-	sf::RenderTexture m_tx;
-	sf::Vector2f m_textureOnAtlasSize;
+	sf::VertexArray m_vertexArray;
 
-	sf::RectangleShape m_shape;
-
-	Block m_blocks[chunkSizeY][chunkSizeX];
-	std::vector<Block*> m_interactiableBlocks;
-	std::vector<Block*> m_flyingObjects;
-
-	bool m_OnChnange = false;
-
-	std::mutex m_mutex;
-	std::condition_variable m_conv;
-
-	void OnChange() {
-
-		m_tx.clear(sf::Color(0,0,0,0));
-
-		sf::RectangleShape shape (Settings::blockSize);
-		shape.setTexture(m_atlas);
-
-		for (int y = 0; y < chunkSizeY; y++) {
-			for (int x = 0; x < chunkSizeX; x++) {
-				shape.setTextureRect(sf::IntRect(Settings::textureResolution.x * (m_blocks[y][x].getId() % Settings::atlasSize.x), Settings::textureResolution.y * std::floor(m_blocks[y][x].getId() / Settings::atlasSize.y), Settings::textureResolution.x, Settings::textureResolution.y));
-				shape.setPosition(m_blocks[y][x].getPosition());
-
-				m_tx.draw(shape);
-			}
-		}		
-
-		m_tx.display();
-
-		m_shape.setTexture(&m_tx.getTexture());
+	//generate body
+	std::vector<b2Body*> m_bodyList;
+	std::vector<b2BodyDef*> m_bodyDefs = {};
+	std::vector<b2EdgeShape> m_physicShapes;
+	b2BodyDef* CreatBodyDef(Block* block) {
+		auto bodyDef = new b2BodyDef();
+		bodyDef->type = b2_staticBody;
+		bodyDef->position = toGlPosition(m_transform.GetPosition() + sf::Vector2f(block->getChunkPosition().x * Settings::blockSize.x, block->getChunkPosition().y * Settings::blockSize.y));
+		return bodyDef;
 	}
 
+	//blocks
+	Block m_blocks[chunkSizeY][chunkSizeX];
+	std::vector<Block* > m_interactiableBlocks;
+	std::vector<Block*> m_flyingObjects;
 
+	
+
+	//multy threading
+	std::mutex m_mutex, m_mutex2;
+	std::condition_variable m_conv, m_conv2;
+
+	//rebuild
+	bool m_OnChnange = false, m_OnCollisionChange = false;
+
+	void OnChange();
+	void OnCollisionChange();
+
+	//has near blocks
+	bool hasNBlockDown(int x, int y) {
+		return (y < chunkSizeY -1 && m_blocks[y + 1][x].getId() == 0);
+	}
+	bool hasNBlockUp(int x, int y) {
+		return (y > 0 && m_blocks[y - 1][x].getId() == 0);
+	}
+	bool hasNBlockLeft(int x, int y);
+	bool hasNBlockRight(int x, int y);
+
+	//colisions
+	struct BlockCollision {
+		Block* block;
+		
+		bool left, right, up, down;
+	};
+
+	std::vector<BlockCollision> m_currentCollisions;
 };
