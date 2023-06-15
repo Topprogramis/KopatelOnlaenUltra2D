@@ -2,17 +2,30 @@
 #include"include.h"
 #include"Transform.h"
 #include"CollisionEvents.hpp"
+#include"Inventory.h"
 
 class Player : public ICollisionEnterEvent {
 public:
 	Player(sf::Vector2f position) {
 		m_transform = Transform();
 
+
 		m_transform.SetPostion(position);
+	}
+
+	void SetInventory(Inventory* inventory) {
+		m_inventory = inventory;
 	}
 
 	void InitInWorld();
 	void Update();
+
+	void SaveData();
+	void LoadData();
+
+	void UpdatePos(sf::Vector2f newPos) {
+		m_transform.SetPostion(newPos);
+	}
 
 	void FixedUpdate();
 	void Draw(sf::RenderWindow* window);
@@ -36,6 +49,8 @@ public:
 	}
 private:
 	Transform m_transform;
+
+	Inventory* m_inventory;
 
 	bool m_onGround = false;
 

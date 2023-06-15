@@ -2,29 +2,25 @@
 #include"TimeManage.h"
 #include"World.h"
 
-
-Inventory::Inventory(Transform transform, int ColumCount, std::string name) : UiElement(transform.GetPosition(), transform.GetSize(), name, false) {
-	this->m_transform = transform;
-	this->m_columCount = ColumCount;
+Inventory::Inventory(Transform transform, int cellSize, int cellOffset, sf::Vector2i cellsCount, std::string name) : UiElement(transform.GetPosition(), transform.GetSize(), name, false) {
+	m_cellSize = cellSize;
+	m_cellsCount = cellsCount;
+	m_cellOffset = sf::Vector2f(cellOffset,cellOffset);
+	m_borderSize = { 15,15 };
 
 	Init();
 }
 
 void Inventory::Init() {
-	m_scrollArea.create(m_transform.GetSize().x, m_transform.GetSize().y);
-
-	m_cellSize = this->m_transform.GetSize().x / m_columCount;
-
-	m_borderSize = sf::Vector2f(m_cellSize / m_columCount, m_cellSize / m_columCount);
-
-	m_cellSize = (this->m_transform.GetSize().x - m_borderSize.x * (m_columCount + 1)) / m_columCount;
+	m_scrollArea.create(m_transform.Size().x, m_transform.Size().y);
 
 	m_items = {};
 
 	m_font.loadFromFile("font.ttf");
 
+	m_cellBackTx.loadFromFile("inventoryCell.png");
 	m_backTx.loadFromFile("inventoryBack.png");
-	m_back.setSize(m_transform.GetSize());
+	m_back.setSize(m_transform.Size());
 	m_back.setTexture(&m_backTx);
 
 	OnOpen.AddListener(std::bind(&Inventory::Opened, this));
@@ -44,13 +40,62 @@ void Inventory::Init() {
 
 	LoadItems();
 
-	for (int i = 0; i < 32; i++) {
-		//m_cells.push_back(Cell());
-	}
-
-	m_cells[0].AddItem(m_items[2]);
+	m_dragObject.dragItemShape = sf::RectangleShape(sf::Vector2f((float)m_cellSize, (float)m_cellSize));
+	m_dragObject.dragItemShape.setTexture(&m_atlas);
+	
+	CreatCells();
+	m_cells[0]->AddItem(m_items[2]);
+	m_cells[1]->AddItem(m_items[5]);
 
 	Settings::world->OnBlockBreak.AddListener(std::bind(&Inventory::CollectBlock, this, std::placeholders::_1));
+
+}
+
+void Inventory::Load() {
+	std::ifstream saveFile;
+
+	saveFile.open("saves\\player.txt");
+	if (!saveFile.is_open()) {
+		std::cout << "Save is not found. Please create in game files saves/player.txt" << std::endl;
+		return;
+	}
+
+	std::string id, count, buf;
+	bool initId = false;
+
+	std::getline(saveFile, buf);
+	std::getline(saveFile, buf);
+	for (auto& i : buf) {
+		if (i == ',') {
+			initId = true;
+			continue;
+		}
+		else if (i == ';') {
+			if (count != "0") {
+				AddItem(std::stoi(id), std::stoi(count));
+
+				initId = false;
+				id = "";
+				count = "";
+			}
+		}
+		else if (initId) {
+			count += i;
+		}
+		else {
+			id += i;
+		}
+	}
+
+	saveFile.close();
+}
+
+void Inventory::CreatCells() {
+	for (int y = 0; y < m_cellsCount.y; y++) {
+		for (int x = 0; x < m_cellsCount.x; x++) {
+			m_cells.push_back(new Cell(sf::Vector2f(x * (float)m_cellSize + x*m_cellOffset.x, y * (float)m_cellSize + y * m_cellOffset.y), sf::Vector2f(m_cellSize, m_cellSize), m_font, &m_cellBackTx));
+		}
+	}
 }
 
 //events
@@ -66,13 +111,13 @@ void Inventory::OnStartDrag(PointEventData data) {
 	Cell* cell = getCellByLocalPos(localPos);
 
 	if (cell!=nullptr && cell->getItem().id != 0) {
+		std::unique_lock<std::recursive_mutex> lock(m_mutex);
 		m_dragObject.dragItem = cell->getItem();
 		cell->PopItem(cell->getItem());
+		lock.unlock();
 
-		//m_dragObject.startCellId = ind;
+		m_dragObject.startCell = cell;
 
-		m_dragObject.dragItemShape = sf::RectangleShape(sf::Vector2f((float)m_cellSize, (float)m_cellSize));
-		m_dragObject.dragItemShape.setTexture(&m_atlas);
 		m_dragObject.dragItemShape.setTextureRect(sf::IntRect(Settings::textureResolution.x * (m_dragObject.dragItem.id % Settings::atlasSize.x), Settings::textureResolution.y * std::floor(m_dragObject.dragItem.id / Settings::atlasSize.y), Settings::textureResolution.x, Settings::textureResolution.y));
 		m_dragObject.dragItemShape.setFillColor(sf::Color::White);
 	}
@@ -85,46 +130,46 @@ void Inventory::OnDrag(PointEventData data) {
 void Inventory::OnEndDrag(PointEventData data) {
 	sf::Vector2f localPos = sf::Vector2f(sf::Mouse::getPosition(*Settings::window)) - UiElement::m_transform.ScreenPosition();
 
-	if (localPos.x >= m_borderSize.x && localPos.x <= m_transform.GetSize().x - m_borderSize.x &&
-		localPos.y >= 0 && localPos.y <= m_transform.GetSize().y) {
+	Cell* cell = getCellByLocalPos(localPos);
 
-		int indX = localPos.x / (m_cellSize + m_borderSize.x);
-		int indY = ((-m_srollOffset) + localPos.y) / (m_cellSize + m_borderSize.y * 2);
-
-		int ind = indX + m_columCount * indY;
-
-		if (ind < m_cells.size()) {
-			if (m_cells[ind].AddItem(m_dragObject.dragItem)) {
-				m_dragObject.dragItem.id = 0;
-				m_dragObject.dragItemShape.setFillColor({ 0,0,0,0 });
-			}
-			else {
-				m_cells[m_dragObject.startCellId].AddItem(m_dragObject.dragItem);
-				m_dragObject.dragItemShape.setFillColor({ 0,0,0,0 });
-				m_dragObject.dragItem.id = 0;
-			}
-
-		}
+	std::unique_lock<std::recursive_mutex> lock(m_mutex);
+	if (cell != nullptr && cell->AddItem(m_dragObject.dragItem)) {
+		m_dragObject.dragItem.id = 0;
+		m_dragObject.dragItemShape.setFillColor({ 0,0,0,0 });
 	}
+	else {
+		if(m_dragObject.startCell!=nullptr)
+			m_dragObject.startCell->AddItem(m_dragObject.dragItem);
+		m_dragObject.dragItemShape.setFillColor({ 0,0,0,0 });
+		m_dragObject.dragItem.id = 0;
+	}
+	lock.unlock();
+
 }
 
+void Inventory::PopItem(int id, int count) {
+	for (auto& i : m_cells) {
+		if (i->PopItem(m_items[id],count))
+			break;
+	}
+}
 void Inventory::CollectBlock(BlockData* data) {
 	for (auto& i : m_cells) {
-		if (i.AddItem(m_items[data->id]))
+		if (i->AddItem(m_items[data->id]))
 			break;
 	}
 }
 Item Inventory::getSelect() {
-	Item i = m_cells[0].getItem();
-	m_cells[0].PopItem(i);
+	Item i = m_cells[0]->getItem();
 	return i;
 }
 
 Cell* Inventory::getCellByLocalPos(sf::Vector2f pos) {
 	for (auto& i : m_cells) {
-		if (i.IsPointEnter(pos))
-			return &i;
+		if (i->IsPointEnter(pos))
+			return i;
 	}
+	return nullptr;
 }
 
 
@@ -141,6 +186,16 @@ void Inventory::Close() {
 		m_animator->SelectScript("Close");
 		m_state = closing;
 	}
+}
+
+std::string Inventory::Serialize() {
+	std::string data;
+
+	for (auto& i : m_cells) {
+		data += std::to_string(i->getItem().id) + "," + std::to_string(i->getItem().id) + ";";
+	}
+
+	return data;
 }
 
 
@@ -173,10 +228,16 @@ void Inventory::LoadItems() {
 
 		if (i < m_words.size())
 			name = m_words[i];
-		AddItem(Item{ i, name });
+		AddItem(Item{ i, name,&m_atlas });
 	}
 
 
+}
+void Inventory::AddItem(int id, int count) {
+	for (auto& i : m_cells) {
+		if (i->AddItem(m_items[id], count))
+			break;
+	}
 }
 void Inventory::AddItem(Item item) {
 	m_items.push_back(item);
@@ -188,53 +249,21 @@ void Inventory::FixedUpdate() {
 void Inventory::Draw(sf::RenderTexture* window) {
 
 	m_scrollArea.clear(sf::Color(0, 0, 0, 0));
-	sf::RectangleShape sp;
-	sf::RectangleShape back;
-	sf::Text text = sf::Text(" ", m_font, 12);
 
-	for (int i = 0; i < m_cells.size();i++) {
-
-		auto cell = m_cells[i];
-
-		int cellX = i - (m_columCount * (i / m_columCount));
-		int cellY = i / m_columCount;
-
-		int selectId = cell.getItem().id;
-
-		sp.setTextureRect(sf::IntRect(Settings::textureResolution.x * (selectId % Settings::atlasSize.x), Settings::textureResolution.y * std::floor(selectId / Settings::atlasSize.y), Settings::textureResolution.x, Settings::textureResolution.y));
-
-		sp.setTexture(&m_atlas);
-
-		if(selectId!=0)
-			text.setString(std::to_string(cell.getCount()));
-		else
-			text.setString("");
-
-		sp.setSize(sf::Vector2f(m_cellSize, m_cellSize));
-		back.setSize(sf::Vector2f(m_cellSize+2, m_cellSize+2));
-
-		auto itemPos = sf::Vector2f(cellX * m_cellSize + m_borderSize.x * cellX, cellY * m_cellSize + m_borderSize.y * 2 * cellY + m_srollOffset);
-
-		sp.setPosition(itemPos);
-		back.setPosition(itemPos);
-		text.setPosition(itemPos + sf::Vector2f(m_cellSize/2, m_cellSize));
-
-		sp.setFillColor(sf::Color::White);
-		back.setFillColor({ 150,150,150,150 });
-
-		m_scrollArea.draw(back);
-		m_scrollArea.draw(sp);
-		m_scrollArea.draw(text);
+	std::unique_lock<std::recursive_mutex> lock(m_mutex);
+	for (auto& i : m_cells) {
+		i->Draw(&m_scrollArea);
 	}
+	lock.unlock();
 
 	m_scrollArea.display();
 
-	sf::RectangleShape items(m_transform.GetSize()- sf::Vector2f(0,m_borderSize.y*2));
+	sf::RectangleShape items(m_transform.Size());
 	items.setTexture(&m_scrollArea.getTexture());
 
-	auto xOffset = m_transform.GetSize().x - (m_cellSize * m_columCount + m_borderSize.x * (m_columCount-1));
+	//auto xOffset = m_transform.Size().x - (m_cellSize * m_columCount + m_borderSize.x * (m_columCount-1));
 
-	items.setPosition(UiElement::m_transform.ScreenPosition() + sf::Vector2f(xOffset/2, m_borderSize.y));
+	items.setPosition(UiElement::m_transform.ScreenPosition() + m_borderSize);
 
 	m_back.setPosition(UiElement::m_transform.ScreenPosition());
 

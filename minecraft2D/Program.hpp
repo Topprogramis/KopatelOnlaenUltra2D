@@ -4,6 +4,7 @@
 #include"ui/GuiManager.hpp"
 #include"BlockController.h"
 #include"ui/Animator.hpp"
+#include"ThreadManagaer.hpp"
 
 class Program {
 public:
@@ -14,28 +15,27 @@ public:
 	void Init() {
 		LoadSettings();
 
+		m_threadManager = new ThreadManager();
+
+		Settings::threadManager = m_threadManager;
+
+		m_threadManager->AddThread(new Thread("main", std::bind(&Program::Loop, this, std::placeholders::_1)));
+		m_threadManager->AddThread(new Thread("uiRender", std::bind(&Program::GuiLoop, this, std::placeholders::_1)));
+		m_threadManager->AddThread(new Thread("fixedUpdate", std::bind(&Program::FixedUpdate, this, std::placeholders::_1)));
+		m_threadManager->AddThread(new Thread("chunkUpdate", std::bind(&Program::ChunkBlocksUpdate, this, std::placeholders::_1)));
+		m_threadManager->AddThread(new Thread("physicUpdate", std::bind(&Program::PhysicUpdate, this, std::placeholders::_1)));
+		m_threadManager->AddThread(new Thread("animation", std::bind(&Program::AnimationUpdate, this, std::placeholders::_1)));
+
 		Start();
 
 		Time::globalTimeManager = &m_time;
 
-		m_mainThread = std::thread(std::bind(&Program::Loop, this));
-		m_uiMainThread = std::thread(std::bind(&Program::GuiLoop, this));
-		m_fixedUpdateThread = std::thread(std::bind(&Program::FixedUpdate, this));
-		m_buildChunkThread = std::thread(std::bind(&Program::ChunkBlocksUpdate, this));
-		m_physicThread = std::thread(std::bind(&Program::PhysicUpdate, this));
-		m_animatonThread = std::thread(std::bind(&Program::AnimationUpdate, this));
-		//m_eventProcessThread = std::thread(std::bind(&Program::EventThread, this));
+		InitThreads();
 
-		m_mainThread.join();
-
-		m_uiMainThread.join();
-		m_fixedUpdateThread.join();
-		m_buildChunkThread.join();
-		m_physicThread.join();
-		m_animatonThread.join();
-		//m_eventProcessThread.join();
+		m_threadManager->LaunchAll();
 
 		End();
+
 	}
 
 	void LoadCollisionList() {
@@ -75,7 +75,7 @@ public:
 	}
 
 	void StartAfterInit() {
-
+		m_inventory->Load();
 	}
 
 
@@ -129,10 +129,18 @@ public:
 		m_blockUpdate.wait(lock4);
 		lock4.unlock();
 
+		//animation thread
+		m_mainControlConv.notify_one();
 
+		std::mutex m;
+		std::unique_lock<std::mutex> lock8(m);
+		m_mainConv.wait(lock8);
+		lock8.unlock();
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
 
-	void GuiLoop() {
+	void GuiLoop(Thread* thread) {
 		std::mutex m;
 		std::unique_lock<std::mutex> lock(m);
 		m_guiControlConv.wait(lock);
@@ -148,31 +156,45 @@ public:
 
 		while (m_run)
 		{
-			std::this_thread::sleep_for(std::chrono::milliseconds(15));
+			thread->ResetClock();
+
+			thread->ExcuteCommands();
+
 			m_GUImanager->Update();
 			m_GUImanager->DrawUiElements();
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(15 - (int)thread->getElapseTime()));
 		}
 
 		std::cout << "GUI thread end" << std::endl;
 	}
 
-	void Loop() {
+	void Loop(Thread* thread) {
+
 		CreateWindow();
 
-		std::cout << "Main thread init successful" << std::endl;
+		std::mutex m;
+		std::unique_lock<std::mutex> lock(m);
 
-		InitThreads();
+		m_mainControlConv.wait(lock);
+		lock.unlock();
+		m_mainConv.notify_one();
+
+		std::cout << "Main thread init successful" << std::endl;
 
 		StartAfterInit();
 
 
 		while (m_run || m_fixedRun || m_chunkRun || m_physicRun) {
+			thread->ResetClock();
+
+			thread->ExcuteCommands();
+
 			sf::Event e;
 			while (m_window.pollEvent(e)) {
 				ProcessEvent(e);
 				m_GUImanager->HandleEvnet(e);
 			}
-
 
 			m_window.clear();
 
@@ -182,7 +204,8 @@ public:
 
 			m_window.display();
 
-			m_time.Update();
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(15 - (int)thread->getElapseTime()));
 
 		}
 
@@ -201,7 +224,7 @@ public:
 
 	}
 
-	void AnimationUpdate() {
+	void AnimationUpdate(Thread* thread) {
 		std::mutex m;
 		std::unique_lock<std::mutex> lock(m);
 		m_animationControlConv.wait(lock);
@@ -216,15 +239,20 @@ public:
 		std::cout << "Animation update thread init successful" << std::endl;
 
 		while (m_fixedRun) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(Settings::fixedUpdateTime));
+			thread->ResetClock();
+
+			thread->ExcuteCommands();
 
 			for (auto& i : m_animators)
 				i->Process();
+
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(Settings::fixedUpdateTime - (int)thread->getElapseTime()));
 		}
 
 		std::cout << "Animation update thread end" << std::endl;
 	}
-	void EventThread() {
+	void EventThread(Thread* thread) {
 		std::mutex m;
 		std::unique_lock<std::mutex> lock(m);
 		m_eventControlConv.wait(lock);
@@ -251,7 +279,7 @@ public:
 
 		std::cout << "Event thread end" << std::endl;
 	}
-	void FixedUpdate() {
+	void FixedUpdate(Thread* thread) {
 		std::mutex m;
 		std::unique_lock<std::mutex> lock(m);
 		m_fixedControlConv.wait(lock);
@@ -266,7 +294,9 @@ public:
 		std::cout << "Fixed update thread init successful" << std::endl;
 
 		while (m_fixedRun) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(Settings::fixedUpdateTime));
+			thread->ResetClock();
+
+			thread->ExcuteCommands();
 
 			m_world->FixedUpdate();
 			m_blockController->FixedUpdate();
@@ -276,12 +306,14 @@ public:
 				//m_world->Interact();
 				m_interact = false;
 			}
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(Settings::fixedUpdateTime - (int)thread->getElapseTime()));
 		}
 
 		std::cout << "Fixed update thread end" << std::endl;
 	}
 
-	void ChunkBlocksUpdate() {
+	void ChunkBlocksUpdate(Thread* thread) {
 		std::mutex m;
 		std::unique_lock<std::mutex> lock(m);
 		m_blockControlUpdate.wait(lock);
@@ -296,14 +328,18 @@ public:
 		std::cout << "Chunk update thread init successful" << std::endl;
 
 		while (m_chunkRun) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(Settings::fixedUpdateTime));
+			thread->ResetClock();
+
+			thread->ExcuteCommands();
 			m_world->UpdateBlocks();
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(Settings::fixedUpdateTime - (int)thread->getElapseTime()));
 		}
 
 		std::cout << "chunk update end" << std::endl;
 	}
 
-	void PhysicUpdate() {
+	void PhysicUpdate(Thread* thread) {
 		std::mutex m;
 		std::unique_lock<std::mutex> lock(m);
 		m_physicControlConv.wait(lock);
@@ -316,8 +352,12 @@ public:
 		std::cout << "physic thread init successful" << std::endl;
 
 		while (m_physicRun) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(Settings::physicUpdateTime));
+			thread->ResetClock();
+
+			thread->ExcuteCommands();
 			m_world->PhysicUpdate();
+			
+			std::this_thread::sleep_for(std::chrono::milliseconds(Settings::physicUpdateTime - (int)thread->getElapseTime()));
 		}
 
 		std::cout << "physic update end" << std::endl;
@@ -357,16 +397,15 @@ public:
 		m_GUImanager = new GuiManager(sf::Vector2f(0, 0), Settings::windowSize, { 0,0,0,0 });
 		m_GUImanager->setWindow(&m_window);
 
-		m_GUImanager->AddElemnt(new Inventory(Transform(sf::Vector2f(200, 100), sf::Vector2f(600, 600)), 8, "PlayerInventory"));
+		m_GUImanager->AddElemnt(new Inventory(Transform(sf::Vector2f(200, 100), sf::Vector2f(600, 600)), 50, 15,{ 9,4 }, "PlayerInventory"));
 
 		m_inventory = static_cast<Inventory*>(m_GUImanager->getElementByName("PlayerInventory"));
+		m_world->getPlayer()->SetInventory(m_inventory);
 
 		m_blockController = new BlockController(m_inventory);
 	}
 	void CreateWindow() {
 		m_window.create(sf::VideoMode(Settings::windowSize.x, Settings::windowSize.y), "minecraft2D");
-
-		m_window.setFramerateLimit(60);
 	}
 	void LoadSettings() {
 		std::cout << "settings loading..." << std::endl;
@@ -447,6 +486,8 @@ private:
 	sf::RenderWindow m_window;
 	Time m_time;
 
+	ThreadManager* m_threadManager;
+
 	Inventory* m_inventory;
 	BlockController* m_blockController;
 	GuiManager* m_GUImanager;
@@ -463,8 +504,8 @@ private:
 
 	bool m_fixedRun = true, m_chunkRun = true, m_physicRun = true;
 
-	std::condition_variable m_fixedConv, m_physicConv, m_blockUpdate, m_guiConv, m_eventConv, m_animationConv;
-	std::condition_variable m_fixedControlConv, m_physicControlConv, m_blockControlUpdate, m_guiControlConv, m_eventControlConv, m_animationControlConv;
+	std::condition_variable m_mainConv, m_fixedConv, m_physicConv, m_blockUpdate, m_guiConv, m_eventConv, m_animationConv;
+	std::condition_variable  m_mainControlConv, m_fixedControlConv, m_physicControlConv, m_blockControlUpdate, m_guiControlConv, m_eventControlConv, m_animationControlConv;
 
 	std::recursive_mutex m_eventMutex;
 
@@ -476,6 +517,4 @@ private:
 
 
 	World* m_world;
-
-	std::thread m_mainThread, m_fixedUpdateThread, m_buildChunkThread, m_physicThread, m_uiMainThread, m_eventProcessThread, m_animatonThread;
 };

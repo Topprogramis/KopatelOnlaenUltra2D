@@ -23,6 +23,7 @@ sf::Vector2f Settings::windowSize = { 800,600 };
 World* Settings::world = nullptr;
 sf::RenderWindow* Settings::window = nullptr;
 Program* Settings::program = nullptr;
+ThreadManager* Settings::threadManager = nullptr;
 
 std::map<std::string, int> Settings::collisionIds = {};
 int Settings::endColId = 0;
@@ -38,20 +39,20 @@ void Settings::AddCol(std::string name) {
 
 
 float toGlPositionX(float x) {
-	return x/80;
+	return x/320;
 }
 float toGlPositionY(float y) {
-	return y/80;
+	return y/320;
 }
 b2Vec2 toGlPosition(sf::Vector2f pos) {
 	return { toGlPositionX(pos.x), toGlPositionY(pos.y) };
 }
 
 float toSfPositionX(float x) {
-	return x*80;
+	return x*320;
 }
 float toSfPositionY(float y) {
-	return y*80;
+	return y*320;
 }
 sf::Vector2f toSfPosition(b2Vec2 pos) {
 	return { toSfPositionX(pos.x), toSfPositionY(pos.y) };

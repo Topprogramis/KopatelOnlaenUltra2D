@@ -1,5 +1,7 @@
 #include"Chunk.hpp"
 #include"World.h"
+#include"ChunkVertexUpdateCommand.hpp"
+#include"ThreadManagaer.hpp"
 
 bool Chunk::hasNBlockLeft(int x, int y) {
 	int chunk = 0;
@@ -20,9 +22,17 @@ bool Chunk::hasNBlockRight(int x, int y) {
 	return (chunk + m_id < Settings::worldSize && Settings::world->getChunk(m_id + chunk)->GetBlock(x + 1, y)->getId() == 0);
 }
 
+void Chunk::Change(bool state) {
+	Settings::threadManager->AddCommand("chunkUpdate", new ChunkBuildChangeCommand(this, state));
+}
+void Chunk::ChangeCol(bool state) {
+	Settings::threadManager->AddCommand("physicUpdate", new ChunkColChangeCommand(this, state));
+}
+
+
 
 void Chunk::OnChange() {
-	m_vertexArray = sf::VertexArray(sf::PrimitiveType::Quads);
+	m_doubleArray.clear();
 
 	m_currentCollisions.clear();
 
@@ -58,10 +68,10 @@ void Chunk::OnChange() {
 			vert4.color = sf::Color::White;
 
 			//append to array
-			m_vertexArray.append(vert1);
-			m_vertexArray.append(vert3);
-			m_vertexArray.append(vert4);
-			m_vertexArray.append(vert2);
+			m_doubleArray.append(vert1);
+			m_doubleArray.append(vert3);
+			m_doubleArray.append(vert4);
+			m_doubleArray.append(vert2);
 
 			//creat colliders
 			bool wasCollison = false;
@@ -78,6 +88,10 @@ void Chunk::OnChange() {
 		}
 
 	}
+
+	Settings::threadManager->AddCommand("blockUpdate", new  InteractBlockChenge(this));
+	Settings::threadManager->AddCommand("main", new ChunkVertexSwapCommand(this, m_doubleArray));
+	ChangeInThisThread(false);
 
 	ChangeCol();
 }
@@ -127,4 +141,6 @@ void Chunk::OnCollisionChange() {
 			(*(m_bodyList.end() - 1))->SetUserData(new CollisionData{ Settings::GetColId("blockRightEdge"),"Block",col.block });
 		}
 	}
+
+	ChangeColInThisThread(false);
 }

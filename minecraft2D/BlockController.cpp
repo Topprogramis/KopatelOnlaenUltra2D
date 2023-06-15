@@ -19,7 +19,10 @@ void BlockController::FixedUpdate() {
 		if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
 			DestroyBlock(m_selectBlock);
 		else if (sf::Mouse::isButtonPressed(sf::Mouse::Right)) {
-			if (!Settings::world->buildBlock(m_selectBlock, &World::blocks[playerInventory->getSelect().id]) && m_IsDownRight) {
+			if (Settings::world->buildBlock(m_selectBlock, &World::blocks[playerInventory->getSelect().id])) {
+				playerInventory->PopItem(playerInventory->getSelect().id);
+			}
+			else if(m_IsDownRight){
 				Settings::world->Interact(m_selectBlock);
 			}
 		}
@@ -41,6 +44,10 @@ void BlockController::Draw() {
 }
 
 void BlockController::DestroyBlock(Block* currentBl) {
+	if (currentBl == nullptr || currentBl->GetData() == nullptr) {
+		m_breakingBlock = nullptr;
+		return;
+	}
 	if (m_breakingBlock == nullptr)
 		m_breakingBlock = currentBl;
 	else if (m_breakingBlock != currentBl) {

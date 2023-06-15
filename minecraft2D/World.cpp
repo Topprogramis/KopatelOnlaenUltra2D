@@ -6,6 +6,13 @@
 #include"Perlin.hpp"
 #include"ContactListener.hpp"
 
+struct Ore {
+	int id;
+	int size;
+	sf::Vector2i pos;
+	int minGenHeight;
+};
+
 BlockData World::blocks[256] = {};
 bool World::WasLoadBlocks = false;
 
@@ -17,6 +24,9 @@ World::World(sf::RenderWindow* window) {
 		LoadBlocks();
 	}
 
+	m_biomse.push_back({ "polina",3,2,1 });
+	m_biomse.push_back({ "desert",18,18,176 });
+	m_biomse.push_back({ "sakura",77,2,1});
 
 	m_chunks.resize(Settings::worldSize);
 
@@ -69,12 +79,26 @@ void World::LoadBlocks() {
 	WasLoadBlocks = true;
 }
 void World::Generate() {
+	srand(Settings::seed);
 	for (int i = 0; i < Settings::worldSize; i++) {
-		m_chunks[i]=Chunk(&m_atlas, Transform(sf::Vector2f(Settings::blockSize.x * chunkSizeX * i, -(Settings::blockSize.y * chunkSizeY / 2))));
-		
+		m_chunks[i] = Chunk(&m_atlas, Transform(sf::Vector2f(Settings::blockSize.x * chunkSizeX * i, -(Settings::blockSize.y * chunkSizeY / 2))));
+
 		m_chunks[i].SetId(i);
 		m_chunks[i].SetWorld(m_player->getTransform());
 
+		m_chunks[i].SetBiome(m_biomse[0]);
+	}
+
+	int oldI = 0;
+	for (int i = 0; i < Settings::worldSize; i+=rand()%4) {
+		Biome b = m_biomse[rand() % m_biomse.size()];
+		for(int j = oldI; j<=i;j++)
+			m_chunks[j].SetBiome(b);
+
+		oldI = i;
+	}
+
+	for (int i = 0; i < Settings::worldSize; i++) {
 		GenerateLastChunk(i);
 
 		std::cout << "chunk " + std::to_string(i+1) + " was generated" << std::endl;
@@ -108,9 +132,6 @@ void World::Draw() {
 
 
 
-
-	std::unique_lock<std::mutex> lock(w_mutex);
-
 	for (auto& i : m_flyingBlocks) {
 		i->getShapePtr()->setPosition(i->getBlock()->getPosition()+i->getBlock()->getChunk()->getPosition()+ m_player->getPosition());
 		m_window->draw(*i->getShapePtr());
@@ -118,13 +139,11 @@ void World::Draw() {
 
 	m_player->Draw(m_window);
 
-	lock.unlock();
-	condition.notify_one();
 
 
 }
 void World::FixedUpdate() {
-	m_player->FixedUpdate();
+
 
 	for (int i = 0; i < Settings::worldSize; i++) {
 		m_chunks[i].FixedUpdate();
@@ -169,6 +188,9 @@ Block* World::findBlock(sf::Vector2f pos) {
 }
 
 bool World::buildBlock(Block* currentBl, BlockData* bl){
+	if (currentBl == nullptr || currentBl->GetData() == nullptr)
+		return false;
+
 	auto list = m_flyingBlocks;
 	for (int i = 0; i < m_flyingBlocks.size(); i++) {
 		if (m_flyingBlocks.at(i)->getBlock()->getPosition().x + Settings::blockSize.x / 2 >= currentBl->getPosition().x &&
@@ -182,6 +204,8 @@ bool World::buildBlock(Block* currentBl, BlockData* bl){
 	if (currentBl->GetData()->id != 0) {
 		return false;
 	}
+
+	
 
 	BlockReplace upd;
 	upd.blockInd = bl->id;
@@ -225,10 +249,27 @@ void World::OnChunkBuild(Chunk* chunk) {
 }
 void World::GenerateLastChunk(int ind) {
 	Chunk* chunk = &m_chunks[ind];
+	Biome biome = chunk->getBiome();
 
 	auto noise = PerlinNoise(Settings::persistence, Settings::frequency, Settings::amplitude, Settings::octaves, Settings::seed);
 
 	int oldHeight = 70;
+
+
+	std::vector<Ore> ores;
+	for (int i = 0; i < 12; i++) {
+		ores.push_back(Ore{ 34,rand() % 10 + 10, {rand() % chunkSizeX,rand() % (chunkSizeY - 70) + 70}, 70});
+	}
+	for (int i = 0; i < 6; i++) {
+		ores.push_back(Ore{ 33,rand() % 8 + 10, {rand() % chunkSizeX,rand() % (chunkSizeY - 70) + 70}, 80 });
+	}
+	for (int i = 0; i < 4; i++) {
+		ores.push_back(Ore{ 32,rand() % 8 + 10, {rand() % chunkSizeX,rand() % (chunkSizeY - 70) + 70}, 90 });
+	}
+	for (int i = 0; i < 2; i++) {
+		ores.push_back(Ore{ 50,rand() % 8 + 10, {rand() % chunkSizeX,rand() % (chunkSizeY - 70) + 70}, 100 });
+	}
+
 
 	for (int x = 0; x < chunkSizeX; x++) {
 		int grassHeight;
@@ -238,16 +279,65 @@ void World::GenerateLastChunk(int ind) {
 			grassHeight = int(noise.GetHeight(x+ind*16, 0)) + oldHeight;
 
 			if (y > grassHeight + 4) {
-				blockId = 1;
+				blockId = biome.stoneId;
 			}
 			else if (y > grassHeight) {
-				blockId = 2;
+				blockId = biome.groundId;
 			}
 			else if (y == grassHeight) {
-				blockId = 3;
+				blockId = biome.grassId;
 			}
 			
+			for (auto& i : ores) {
+				if (i.pos.x == x && y == i.pos.y && i.size > 0) {
+					i.size--;
 
+
+					if (y < grassHeight + 5) {
+						i.size = 0;
+						break;
+					}
+
+					blockId = i.id;
+
+					int m = rand() % 4;
+					switch (m)
+					{
+					case 0:
+						if (i.pos.x + 1 < chunkSizeX) {
+							i.pos.x++;
+						}
+						else {
+							i.pos.x--;
+						}
+					case 1:
+						if (i.pos.y - 1 > grassHeight + 4) {
+							i.pos.y--;
+						}
+						else {
+							i.pos.y++;
+						}
+					case 2:
+						if (i.pos.y + 1 < chunkSizeY) {
+							i.pos.y++;
+						}
+						else {
+							i.pos.y--;
+						}
+					case 3:
+						if (i.pos.x - 1 >= 0) {
+							i.pos.x--;
+						}
+						else {
+							i.pos.x++;
+						}
+					default:
+						break;
+					}
+
+					chunk->SetBlock(i.pos.x, i.pos.y, &blocks[blockId]);
+				}
+			}
 
 			chunk->SetBlock(x, y, &blocks[blockId]);
 		}
@@ -261,7 +351,9 @@ void World::BuildChunks() {
 	//m_cv.notify_one();
 }
 void World::PhysicUpdate() {
-	m_physicalWorld->Step(Settings::fixedUpdateTime / 100.f, 1, 1);
+	m_player->FixedUpdate();
+
+	m_physicalWorld->Step(Settings::fixedUpdateTime / 500.f, 1, 1);
 	for (auto& i : m_chunks) {
 		i.PhysicUpdate();
 	}
@@ -273,6 +365,7 @@ Player* World::getPlayer() {
 }
 //world saves
 void World::Save() {
+	m_player->SaveData();
 	std::ofstream saveFile;
 
 	saveFile.open("saves\\world.txt");

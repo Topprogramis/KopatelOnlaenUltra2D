@@ -24,6 +24,7 @@
 
 class World;
 class Program;
+class ThreadManager;
 
 class Ray;
 
@@ -65,6 +66,7 @@ public:
 	static World* world;
 	static sf::RenderWindow* window;
 	static Program* program;
+	static ThreadManager* threadManager;
 private:
 	static std::map<std::string, int> collisionIds;
 	static int endColId;

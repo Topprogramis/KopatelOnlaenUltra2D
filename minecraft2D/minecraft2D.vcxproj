@@ -24,7 +24,7 @@
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{e603baf3-13a5-4c3f-a7ec-5429bca6d0f6}</ProjectGuid>
     <RootNamespace>minecraft2D</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.22000.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -143,11 +143,13 @@
     <ClCompile Include="Animator.cpp" />
     <ClCompile Include="BlockController.cpp" />
     <ClCompile Include="Chunk.cpp" />
+    <ClCompile Include="GuiCommands.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="Settings.cpp" />
     <ClCompile Include="Inventory.cpp" />
     <ClCompile Include="Perlin.cpp" />
+    <ClCompile Include="ThreadManager.cpp" />
     <ClCompile Include="TimeManage.cpp" />
     <ClCompile Include="Transform.cpp" />
     <ClCompile Include="Triangulate.cpp" />
@@ -163,15 +165,21 @@
     <ClInclude Include="BombBlock.h" />
     <ClInclude Include="Chunk.hpp" />
     <ClInclude Include="CollisionEvents.hpp" />
+    <ClInclude Include="Command.hpp" />
+    <ClInclude Include="CommandPoll.hpp" />
     <ClInclude Include="ContactListener.hpp" />
     <ClInclude Include="FlyingBlock.h" />
+    <ClInclude Include="GuiCommands.h" />
     <ClInclude Include="include.h" />
     <ClInclude Include="Inventory.h" />
     <ClInclude Include="MusicBlock.h" />
     <ClInclude Include="Perlin.hpp" />
     <ClInclude Include="PhysicalBlock.h" />
     <ClInclude Include="Player.hpp" />
+    <ClInclude Include="PlayerComands.hpp" />
     <ClInclude Include="Program.hpp" />
+    <ClInclude Include="Thread.hpp" />
+    <ClInclude Include="ThreadManagaer.hpp" />
     <ClInclude Include="Time.h" />
     <ClInclude Include="TimeManage.h" />
     <ClInclude Include="Transform.h" />
@@ -193,6 +201,7 @@
     <ClInclude Include="ui\UiElement.hpp" />
     <ClInclude Include="ui\UiEvents.hpp" />
     <ClInclude Include="ui\UiObject.hpp" />
+    <ClInclude Include="ChunkVertexUpdateCommand.hpp" />
     <ClInclude Include="World.h" />
   </ItemGroup>
   <ItemGroup>
@@ -208,9 +217,9 @@
     <Import Project="..\packages\sfml_graphics.2.5.1\build\native\sfml_graphics.targets" Condition="Exists('..\packages\sfml_graphics.2.5.1\build\native\sfml_graphics.targets')" />
     <Import Project="..\packages\sfml_audio.redist.2.5.1\build\native\sfml_audio.redist.targets" Condition="Exists('..\packages\sfml_audio.redist.2.5.1\build\native\sfml_audio.redist.targets')" />
     <Import Project="..\packages\sfml_audio.2.5.1\build\native\sfml_audio.targets" Condition="Exists('..\packages\sfml_audio.2.5.1\build\native\sfml_audio.targets')" />
+    <Import Project="..\packages\glm.0.9.9.800\build\native\glm.targets" Condition="Exists('..\packages\glm.0.9.9.800\build\native\glm.targets')" />
     <Import Project="..\packages\Box2D.2.3.0\build\native\Box2D.targets" Condition="Exists('..\packages\Box2D.2.3.0\build\native\Box2D.targets')" />
     <Import Project="..\packages\pugixml.1.13.0\build\native\pugixml.targets" Condition="Exists('..\packages\pugixml.1.13.0\build\native\pugixml.targets')" />
-    <Import Project="..\packages\glm.0.9.9.800\build\native\glm.targets" Condition="Exists('..\packages\glm.0.9.9.800\build\native\glm.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -225,8 +234,8 @@
     <Error Condition="!Exists('..\packages\sfml_audio.redist.2.5.1\build\native\sfml_audio.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\sfml_audio.redist.2.5.1\build\native\sfml_audio.redist.targets'))" />
     <Error Condition="!Exists('..\packages\sfml_audio.2.5.1\build\native\sfml_audio.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\sfml_audio.2.5.1\build\native\sfml_audio.targets'))" />
     <Error Condition="!Exists('..\packages\GLMathematics.0.9.5.4\build\native\GLMathematics.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\GLMathematics.0.9.5.4\build\native\GLMathematics.props'))" />
+    <Error Condition="!Exists('..\packages\glm.0.9.9.800\build\native\glm.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\glm.0.9.9.800\build\native\glm.targets'))" />
     <Error Condition="!Exists('..\packages\Box2D.2.3.0\build\native\Box2D.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Box2D.2.3.0\build\native\Box2D.targets'))" />
     <Error Condition="!Exists('..\packages\pugixml.1.13.0\build\native\pugixml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\pugixml.1.13.0\build\native\pugixml.targets'))" />
-    <Error Condition="!Exists('..\packages\glm.0.9.9.800\build\native\glm.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\glm.0.9.9.800\build\native\glm.targets'))" />
   </Target>
 </Project>

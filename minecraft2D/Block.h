@@ -27,6 +27,11 @@ public:
 
 	}
 
+	virtual void OnChange(Block* block, Chunk* m_chunk, int ind) {
+
+	}
+
+
 	virtual void OnDestroy(Block* block, Chunk* m_chunk) {
 
 	}

@@ -108,6 +108,18 @@
     <Filter Include="Source\Game\Core\Ui\Utilits\Animation">
       <UniqueIdentifier>{4f5c4d4a-5601-4367-aa47-7b980ac86310}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Core\ThreadManager">
+      <UniqueIdentifier>{4a8b9072-6f4f-43e1-9afd-96a9e6e6a1a1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Core\ThreadManager\Comands">
+      <UniqueIdentifier>{14ed2f75-b2e1-4cb5-843b-20740bbddccd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Core\ThreadManager\CommandPoll">
+      <UniqueIdentifier>{59b6b9db-42fa-4de7-898b-591f09f61b10}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Core\ThreadManager\Thread">
+      <UniqueIdentifier>{f3e7dce7-8fe6-41eb-bb93-afc7230c7f8e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -154,6 +166,12 @@
     </ClCompile>
     <ClCompile Include="Animator.cpp">
       <Filter>Source\Game\Core\Ui\Utilits\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="ThreadManager.cpp">
+      <Filter>Source\Game\Core\ThreadManager</Filter>
+    </ClCompile>
+    <ClCompile Include="GuiCommands.cpp">
+      <Filter>Source\Game\Core\ThreadManager\Comands</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -265,6 +283,27 @@
     </ClInclude>
     <ClInclude Include="Program.hpp">
       <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="ThreadManagaer.hpp">
+      <Filter>Source\Game\Core\ThreadManager</Filter>
+    </ClInclude>
+    <ClInclude Include="Command.hpp">
+      <Filter>Source\Game\Core\ThreadManager\Comands</Filter>
+    </ClInclude>
+    <ClInclude Include="ChunkVertexUpdateCommand.hpp">
+      <Filter>Source\Game\Core\ThreadManager\Comands</Filter>
+    </ClInclude>
+    <ClInclude Include="CommandPoll.hpp">
+      <Filter>Source\Game\Core\ThreadManager\CommandPoll</Filter>
+    </ClInclude>
+    <ClInclude Include="Thread.hpp">
+      <Filter>Source\Game\Core\ThreadManager\Thread</Filter>
+    </ClInclude>
+    <ClInclude Include="GuiCommands.h">
+      <Filter>Source\Game\Core\ThreadManager\Comands</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerComands.hpp">
+      <Filter>Source\Game\Core\ThreadManager\Comands</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

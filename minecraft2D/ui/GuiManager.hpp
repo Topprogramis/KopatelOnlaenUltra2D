@@ -6,6 +6,8 @@
 #include "Group.hpp"
 #include "Button.hpp"
 #include "Canvas.hpp"
+#include "../GuiCommands.h"
+#include"../ThreadManagaer.hpp"
 
 
 
@@ -16,6 +18,7 @@ public:
 		m_tx = new sf::RenderTexture();
 		m_tx->create(size.x, size.y);
 
+		doubleTexture.create(size.x, size.y);
 		renderResult.create(size.x, size.y);
 		
 		m_backColor = backColor;
@@ -34,8 +37,6 @@ public:
 	}
 
 	void DrawUiElements() {
-
-
 		m_tx->clear(m_backColor);
 
 		for (auto element : m_drawObjects) {
@@ -43,22 +44,21 @@ public:
 		}
 
 		m_tx->display();
-		std::unique_lock<std::recursive_mutex> lock(m_mutex);
-		renderResult.update(m_tx->getTexture());
-		lock.unlock();
 
+		doubleTexture.update(m_tx->getTexture());
+
+		Settings::threadManager->AddCommand("main", new SwapGuiTexture(this, &doubleTexture));
 	}
 	void Draw() {
-		//DrawUiElements();
-
-		std::unique_lock<std::recursive_mutex> lock(m_mutex);
 		m_shape.setPosition(m_space.GlobalPosition());
-		lock.unlock();
 
 		m_shape.setSize(Settings::windowSize);
 		m_shape.setTexture(&renderResult);
 
 		m_window->draw(m_shape);
+	}
+	void SwapTexture(sf::Texture* tx) {
+		renderResult.swap(*tx);
 	}
 
 
@@ -145,7 +145,7 @@ private:
 	sf::RenderTexture* m_tx;
 	sf::RectangleShape m_shape;
 
-	sf::Texture renderResult;
+	sf::Texture renderResult, doubleTexture;
 
 	sf::Color m_backColor;
 

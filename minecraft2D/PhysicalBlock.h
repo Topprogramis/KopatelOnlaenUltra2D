@@ -11,7 +11,6 @@ public:
 	}
 
 	void Update(Block* block, Chunk* chunk, int ind) override {
-
 		if (block->IsFly()) {
 			auto blockPos = chunk->FindLocalBlock(block->getPosition());
 			auto blockUnder = chunk->GetBlock(blockPos.x + 1, blockPos.y + 1);
@@ -41,9 +40,6 @@ public:
 				auto list = Settings::world->getFlyingObjectsListPtr();
 
 				std::unique_lock<std::mutex> lock(Settings::world->w_mutex);
-				Settings::world->condition.wait(lock);
-
-				//if(Settings::world->getFlyingObjectsListPtr()->size()> selectBlockInd)
 
 				list->erase(list->begin() + selectInd);
 
@@ -58,8 +54,10 @@ public:
 			}
 
 		}
+	}
 
-		else if (chunk->GetBlock(block->getChunkPosition().x, block->getChunkPosition().y + 1)->getId() == 0 || chunk->GetBlock(block->getChunkPosition().x, block->getChunkPosition().y + 1)->IsFly()) {
+	void OnChange(Block* block, Chunk* chunk, int ind) override{
+		if (!block->IsFly() && (chunk->GetBlock(block->getChunkPosition().x, block->getChunkPosition().y + 1)->getId() == 0 || chunk->GetBlock(block->getChunkPosition().x, block->getChunkPosition().y + 1)->IsFly())) {
 			chunk->getInteractibleBlockListPtr()->at(ind) = new Block(block->GetData(), block->getTransform(), chunk);
 			chunk->getInteractibleBlockListPtr()->at(ind)->SetFly(true);
 
@@ -67,7 +65,6 @@ public:
 			chunk->SetBlock(block->getChunkPosition().x, block->getChunkPosition().y, block->GetData());
 
 			std::unique_lock<std::mutex> lock(Settings::world->w_mutex);
-			Settings::world->condition.wait(lock);
 
 			Settings::world->getFlyingObjectsListPtr()->push_back(new FlyingBlock(chunk->getInteractibleBlockListPtr()->at(ind), Settings::world->getFlyingObjectsListPtr()->size()));
 

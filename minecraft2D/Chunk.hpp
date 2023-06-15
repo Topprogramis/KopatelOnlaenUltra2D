@@ -5,6 +5,13 @@
 #include"Action.h"
 #include"Triangulate.h"
 
+
+struct Biome {
+	std::string name;
+	int grassId, groundId, stoneId;
+};
+
+
 class Chunk {
 public:
 	Chunk(sf::Texture* atlas = nullptr,Transform transform = Transform()) {
@@ -15,6 +22,8 @@ public:
 
 		//m_tx.create(transform.GetSize().x, transform.GetSize().y);
 		//m_shape = sf::RectangleShape(transform.GetSize());
+
+		m_doubleArray = sf::VertexArray(sf::Quads);
 
 		m_atlas = atlas;
 
@@ -81,33 +90,29 @@ public:
 		window->draw(m_vertexArray, states);
 	}
 	void Update() {
-		BuildChunk();
+		
 	}
 	void FixedUpdate() {
 
 	}
 
-	//chunk change
-	void Change() {
-		std::unique_lock<std::mutex> lock(m_mutex);
-		
-		m_OnChnange = true;
+	void SwapVertexArray(sf::VertexArray vertexes) {
+		m_vertexArray = vertexes;
+	}
 
-		lock.unlock();
-		m_conv.notify_one();	
+	//chunk change
+	void Change(bool state = true);
+	void ChangeInThisThread(bool state = true) {
+		m_OnChnange = state;
 	}
 	bool IsChange() {
 		return m_OnChnange;
 	}
 
 	//col change
-	void ChangeCol() {
-		std::unique_lock<std::mutex> lock(m_mutex2);
-
-		m_OnCollisionChange = true;
-
-		lock.unlock();
-		m_conv2.notify_one();
+	void ChangeCol(bool state = true);
+	void ChangeColInThisThread(bool state = true) {
+		m_OnCollisionChange = state;
 	}
 	bool IsColChange() {
 		return m_OnCollisionChange;
@@ -183,38 +188,40 @@ public:
 	//chunk rebilding
 	void BuildChunk() {
 		if (m_OnChnange) {
-			std::unique_lock<std::mutex> lock(m_mutex);
-			//m_conv.wait(lock);
 			OnChange();
-			lock.unlock();
-			
-
-			m_OnChnange = false;
-
-			//->Invoke(this);
 		}
 
+	}
+
+	void SetBiome(Biome biome) {
+		m_biome = biome;
+	}
+	Biome getBiome() {
+		return m_biome;
 	}
 
 	//physics
 	void PhysicUpdate() {
 		if (m_OnCollisionChange) {
-			std::unique_lock<std::mutex> lock(m_mutex2);
-
 			OnCollisionChange();
+		}
+	}
 
-			lock.unlock();
-			m_OnCollisionChange = false;
+
+	void ChangeInterBlock() {
+		for (int i = 0; i < m_interactiableBlocks.size(); i++) {
+			if (m_interactiableBlocks[i]->component)
+				m_interactiableBlocks[i]->component->OnChange(m_interactiableBlocks[i], this, i);
 		}
 	}
 	//update interact blcoks
 	void UpdateBlocks() {
+		BuildChunk();
 		for (int i = 0; i < m_interactiableBlocks.size(); i++) {
 			if (m_interactiableBlocks[i]->component)
 				m_interactiableBlocks[i]->component->Update(m_interactiableBlocks[i], this, i);
 			else
 				m_interactiableBlocks.erase(m_interactiableBlocks.begin() + i);
-
 		}
 	}
 
@@ -226,11 +233,15 @@ private:
 	Transform m_transform;
 	Transform* m_world;
 
+	Biome m_biome;
+
 	int m_id;
 
 	//drawing
 	sf::Texture* m_atlas;
+
 	sf::VertexArray m_vertexArray;
+	sf::VertexArray m_doubleArray;
 
 	//generate body
 	std::vector<b2Body*> m_bodyList;
@@ -247,12 +258,6 @@ private:
 	Block m_blocks[chunkSizeY][chunkSizeX];
 	std::vector<Block* > m_interactiableBlocks;
 	std::vector<Block*> m_flyingObjects;
-
-	
-
-	//multy threading
-	std::mutex m_mutex, m_mutex2;
-	std::condition_variable m_conv, m_conv2;
 
 	//rebuild
 	bool m_OnChnange = false, m_OnCollisionChange = false;
