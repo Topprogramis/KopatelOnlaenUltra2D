@@ -11,6 +11,15 @@ Inventory::Inventory(Transform transform, int cellSize, int cellOffset, sf::Vect
 	Init();
 }
 
+void Inventory::BindHotBar(HotBar* hotBar) {
+	m_HotBar = hotBar;
+
+	for (int x = 0; x < m_cellsCount.x; x++) {
+		m_HotBar->AddBindCell(m_cells[x]);
+	}
+	hotBar->Init();
+}
+
 void Inventory::Init() {
 	m_scrollArea.create(m_transform.Size().x, m_transform.Size().y);
 
@@ -42,6 +51,9 @@ void Inventory::Init() {
 
 	m_dragObject.dragItemShape = sf::RectangleShape(sf::Vector2f((float)m_cellSize, (float)m_cellSize));
 	m_dragObject.dragItemShape.setTexture(&m_atlas);
+
+	m_dragObject.dragItemShape.setFillColor({ 0,0,0,0 });
+	m_dragObject.dragItem.id = 0;
 	
 	CreatCells();
 	m_cells[0]->AddItem(m_items[2]);
@@ -113,7 +125,14 @@ void Inventory::OnStartDrag(PointEventData data) {
 	if (cell!=nullptr && cell->getItem().id != 0) {
 		std::unique_lock<std::recursive_mutex> lock(m_mutex);
 		m_dragObject.dragItem = cell->getItem();
-		cell->PopItem(cell->getItem());
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+			m_dragObject.count = cell->getCount();
+		else
+			m_dragObject.count = 1;
+
+
+		cell->PopItem(cell->getItem(),m_dragObject.count);
+
 		lock.unlock();
 
 		m_dragObject.startCell = cell;
@@ -133,13 +152,13 @@ void Inventory::OnEndDrag(PointEventData data) {
 	Cell* cell = getCellByLocalPos(localPos);
 
 	std::unique_lock<std::recursive_mutex> lock(m_mutex);
-	if (cell != nullptr && cell->AddItem(m_dragObject.dragItem)) {
+	if (cell != nullptr && cell->AddItem(m_dragObject.dragItem, m_dragObject.count)) {
 		m_dragObject.dragItem.id = 0;
 		m_dragObject.dragItemShape.setFillColor({ 0,0,0,0 });
 	}
 	else {
 		if(m_dragObject.startCell!=nullptr)
-			m_dragObject.startCell->AddItem(m_dragObject.dragItem);
+			m_dragObject.startCell->AddItem(m_dragObject.dragItem, m_dragObject.count);
 		m_dragObject.dragItemShape.setFillColor({ 0,0,0,0 });
 		m_dragObject.dragItem.id = 0;
 	}
@@ -160,8 +179,7 @@ void Inventory::CollectBlock(BlockData* data) {
 	}
 }
 Item Inventory::getSelect() {
-	Item i = m_cells[0]->getItem();
-	return i;
+	return m_HotBar->getSelect();
 }
 
 Cell* Inventory::getCellByLocalPos(sf::Vector2f pos) {
@@ -192,7 +210,7 @@ std::string Inventory::Serialize() {
 	std::string data;
 
 	for (auto& i : m_cells) {
-		data += std::to_string(i->getItem().id) + "," + std::to_string(i->getItem().id) + ";";
+		data += std::to_string(i->getItem().id) + "," + std::to_string(i->getCount()) + ";";
 	}
 
 	return data;
@@ -258,10 +276,10 @@ void Inventory::Draw(sf::RenderTexture* window) {
 
 	m_scrollArea.display();
 
+
+
 	sf::RectangleShape items(m_transform.Size());
 	items.setTexture(&m_scrollArea.getTexture());
-
-	//auto xOffset = m_transform.Size().x - (m_cellSize * m_columCount + m_borderSize.x * (m_columCount-1));
 
 	items.setPosition(UiElement::m_transform.ScreenPosition() + m_borderSize);
 

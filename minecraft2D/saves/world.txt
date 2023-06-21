@@ -1,2 +1,0 @@
-chunk(26);pos(6,72);block(0)
-chunk(25);pos(12,74);block(0)

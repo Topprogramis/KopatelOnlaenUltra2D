@@ -101,7 +101,7 @@ public:
 		m_chunkPosition = pos;
 	}
 	inline sf::Vector2i getChunkPosition() {
- 		return m_chunkPosition;
+  		return m_chunkPosition;
 	}
 
 	inline bool IsFly() {

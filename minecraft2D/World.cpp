@@ -6,13 +6,6 @@
 #include"Perlin.hpp"
 #include"ContactListener.hpp"
 
-struct Ore {
-	int id;
-	int size;
-	sf::Vector2i pos;
-	int minGenHeight;
-};
-
 BlockData World::blocks[256] = {};
 bool World::WasLoadBlocks = false;
 
@@ -24,9 +17,8 @@ World::World(sf::RenderWindow* window) {
 		LoadBlocks();
 	}
 
-	m_biomse.push_back({ "polina",3,2,1 });
-	m_biomse.push_back({ "desert",18,18,176 });
-	m_biomse.push_back({ "sakura",77,2,1});
+	LoadGenerationSettings();
+
 
 	m_chunks.resize(Settings::worldSize);
 
@@ -59,6 +51,65 @@ World::World(sf::RenderWindow* window) {
 	m_player->InitInWorld();
 }
 
+void World::LoadGenerationSettings() {
+	std::ifstream file;
+
+	file.open("D:\\Users\\Максим\\source\\repos\\Topprogramis\\KopatelOnlaenUltra2D\\minecraft2D\\saves\\generationSettings.txt.txt");
+	if (!file.is_open()) {
+		std::cout << "Save is not found. Please create in game files saves/world.txt" << std::endl;
+		return;
+	}
+
+	std::string data = "", buf;
+	while (std::getline(file, buf))
+	{
+		data += buf;
+	}
+
+	rapidjson::Document document;
+	document.Parse(data.c_str());
+	rapidjson::Value& biomes = document["biomes"];
+	assert(biomes.IsArray());
+
+	for (rapidjson::SizeType i = 0; i < biomes.Size(); i++) {
+		Biome newBiome;
+		newBiome.name = biomes[i]["name"].GetString();
+
+		newBiome.persistence = biomes[i]["persistence"].GetInt();
+		newBiome.frequency = biomes[i]["frequency"].GetInt();
+		newBiome.amplitude = biomes[i]["amplitude"].GetInt();
+		newBiome.octaves = biomes[i]["octaves"].GetInt();
+
+		newBiome.layers = {};
+		rapidjson::Value& layers = biomes[i]["layers"];
+		assert(layers.IsArray());
+
+		for (rapidjson::SizeType layer = 0; layer < layers.Size(); layer++) {
+			Layer newLayer;
+			newLayer.blockId = biomes[i]["layers"][layer]["blockId"].GetInt();
+			newLayer.layerSize = biomes[i]["layers"][layer]["levelSize"].GetInt();
+			newBiome.layers.push_back(newLayer);
+		}
+
+		newBiome.ores = {};
+		rapidjson::Value& ores = biomes[i]["ores"];
+		assert(layers.IsArray());
+
+		for (rapidjson::SizeType ore = 0; ore < ores.Size(); ore++) {
+			Ore newOre;
+			newOre.id = biomes[i]["ores"][ore]["id"].GetInt();
+			newOre.maxHeight = biomes[i]["ores"][ore]["maxHeight"].GetInt();
+			newOre.minHeight = biomes[i]["ores"][ore]["minHeight"].GetInt();
+			newOre.maxSize = biomes[i]["ores"][ore]["maxSize"].GetInt();
+			newOre.countPerChunk = biomes[i]["ores"][ore]["countPerChunk"].GetInt();
+			
+			newBiome.ores.push_back(newOre);
+		}
+
+		m_biomes.push_back(newBiome);
+	}
+}
+
 Chunk* World::getChunk(int chunkId) {
 	return &m_chunks[chunkId];
 }
@@ -86,12 +137,12 @@ void World::Generate() {
 		m_chunks[i].SetId(i);
 		m_chunks[i].SetWorld(m_player->getTransform());
 
-		m_chunks[i].SetBiome(m_biomse[0]);
+		m_chunks[i].SetBiome(m_biomes[0]);
 	}
 
 	int oldI = 0;
 	for (int i = 0; i < Settings::worldSize; i+=rand()%4) {
-		Biome b = m_biomse[rand() % m_biomse.size()];
+		Biome b = m_biomes[rand() % m_biomes.size()];
 		for(int j = oldI; j<=i;j++)
 			m_chunks[j].SetBiome(b);
 
@@ -249,100 +300,77 @@ void World::OnChunkBuild(Chunk* chunk) {
 }
 void World::GenerateLastChunk(int ind) {
 	Chunk* chunk = &m_chunks[ind];
-	Biome biome = chunk->getBiome();
+	Biome currentBiome = chunk->getBiome();
 
-	auto noise = PerlinNoise(Settings::persistence, Settings::frequency, Settings::amplitude, Settings::octaves, Settings::seed);
+	auto noise = PerlinNoise(currentBiome.persistence, currentBiome.frequency, currentBiome.amplitude, currentBiome.octaves, Settings::seed);
 
 	int oldHeight = 70;
 
 
-	std::vector<Ore> ores;
-	for (int i = 0; i < 12; i++) {
-		ores.push_back(Ore{ 34,rand() % 10 + 10, {rand() % chunkSizeX,rand() % (chunkSizeY - 70) + 70}, 70});
-	}
-	for (int i = 0; i < 6; i++) {
-		ores.push_back(Ore{ 33,rand() % 8 + 10, {rand() % chunkSizeX,rand() % (chunkSizeY - 70) + 70}, 80 });
-	}
-	for (int i = 0; i < 4; i++) {
-		ores.push_back(Ore{ 32,rand() % 8 + 10, {rand() % chunkSizeX,rand() % (chunkSizeY - 70) + 70}, 90 });
-	}
-	for (int i = 0; i < 2; i++) {
-		ores.push_back(Ore{ 50,rand() % 8 + 10, {rand() % chunkSizeX,rand() % (chunkSizeY - 70) + 70}, 100 });
-	}
-
-
 	for (int x = 0; x < chunkSizeX; x++) {
-		int grassHeight;
+		int grassHeight = int(noise.GetHeight(x + ind * 16, 0)) + oldHeight;
+
 		for (int y = 0; y < chunkSizeY; y++) {
+			if (chunk->GetBlock(x, y)->GetData()->id != 0)
+				continue;
+
 			int blockId = 0;
 
-			grassHeight = int(noise.GetHeight(x+ind*16, 0)) + oldHeight;
+			Layer currentLayer = { 0,0 };
 
-			if (y > grassHeight + 4) {
-				blockId = biome.stoneId;
-			}
-			else if (y > grassHeight) {
-				blockId = biome.groundId;
-			}
-			else if (y == grassHeight) {
-				blockId = biome.grassId;
-			}
 			
-			for (auto& i : ores) {
-				if (i.pos.x == x && y == i.pos.y && i.size > 0) {
-					i.size--;
 
-
-					if (y < grassHeight + 5) {
-						i.size = 0;
-						break;
-					}
-
-					blockId = i.id;
-
-					int m = rand() % 4;
-					switch (m)
-					{
-					case 0:
-						if (i.pos.x + 1 < chunkSizeX) {
-							i.pos.x++;
-						}
-						else {
-							i.pos.x--;
-						}
-					case 1:
-						if (i.pos.y - 1 > grassHeight + 4) {
-							i.pos.y--;
-						}
-						else {
-							i.pos.y++;
-						}
-					case 2:
-						if (i.pos.y + 1 < chunkSizeY) {
-							i.pos.y++;
-						}
-						else {
-							i.pos.y--;
-						}
-					case 3:
-						if (i.pos.x - 1 >= 0) {
-							i.pos.x--;
-						}
-						else {
-							i.pos.x++;
-						}
-					default:
-						break;
-					}
-
-					chunk->SetBlock(i.pos.x, i.pos.y, &blocks[blockId]);
+			for (auto& layer : currentBiome.layers) {
+				if (y >= grassHeight && y <= grassHeight + layer.layerSize) {
+					currentLayer = layer;
 				}
 			}
+
+			blockId = currentLayer.blockId;
+			
 
 			chunk->SetBlock(x, y, &blocks[blockId]);
 		}
 		oldHeight = grassHeight;
 	}
+
+	for (auto& i : currentBiome.ores) {
+		for (int c = 0; c < i.countPerChunk; c++) {
+			int blockCount = rand() % (i.maxSize - 1) + 2;
+			int x = rand() % chunkSizeX;
+			int y = rand() % (i.maxHeight - i.minHeight) + i.minHeight;
+			for (int j = 0; j < blockCount; j++) {
+				int genType = rand() % 4;
+				switch (genType)
+				{
+				case 0:
+					if (y + 1 < chunkSizeY)
+						y++;
+					else
+						y--;
+				case 1:
+					if (y - 1 >= 0)
+						y--;
+					else
+						y++;
+				case 2:
+					if (x + 1 < chunkSizeX)
+						x++;
+					else
+						x--;
+				case 3:
+					if (x - 1 >= 0)
+						x--;
+					else
+						x++;
+				}
+				chunk->SetBlock(x, y, &blocks[i.id]);
+			}
+		}
+
+
+	}
+
 }
 void World::BuildChunks() {
 	for (auto& i : m_chunks) {
@@ -353,11 +381,10 @@ void World::BuildChunks() {
 void World::PhysicUpdate() {
 	m_player->FixedUpdate();
 
-	m_physicalWorld->Step(Settings::fixedUpdateTime / 500.f, 1, 1);
+	m_physicalWorld->Step(Settings::fixedUpdateTime / 100.f, 1, 1);
 	for (auto& i : m_chunks) {
 		i.PhysicUpdate();
 	}
-	//m_cv.notify_one();
 }
 
 Player* World::getPlayer() {

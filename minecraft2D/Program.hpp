@@ -196,6 +196,7 @@ public:
 				m_GUImanager->HandleEvnet(e);
 			}
 
+
 			m_window.clear();
 
 			m_world->Draw();
@@ -203,6 +204,7 @@ public:
 			m_GUImanager->Draw();
 
 			m_window.display();
+
 
 
 			std::this_thread::sleep_for(std::chrono::milliseconds(15 - (int)thread->getElapseTime()));
@@ -246,6 +248,8 @@ public:
 			for (auto& i : m_animators)
 				i->Process();
 
+			if ((int)thread->getElapseTime() >= 10)
+				std::cout << "anim" << std::endl;
 
 			std::this_thread::sleep_for(std::chrono::milliseconds(Settings::fixedUpdateTime - (int)thread->getElapseTime()));
 		}
@@ -307,6 +311,9 @@ public:
 				m_interact = false;
 			}
 
+			if ((int)thread->getElapseTime() >= 10)
+				std::cout << "fixed thread" << std::endl;
+
 			std::this_thread::sleep_for(std::chrono::milliseconds(Settings::fixedUpdateTime - (int)thread->getElapseTime()));
 		}
 
@@ -355,9 +362,12 @@ public:
 			thread->ResetClock();
 
 			thread->ExcuteCommands();
+
+
 			m_world->PhysicUpdate();
 			
 			std::this_thread::sleep_for(std::chrono::milliseconds(Settings::physicUpdateTime - (int)thread->getElapseTime()));
+
 		}
 
 		std::cout << "physic update end" << std::endl;
@@ -398,14 +408,20 @@ public:
 		m_GUImanager->setWindow(&m_window);
 
 		m_GUImanager->AddElemnt(new Inventory(Transform(sf::Vector2f(200, 100), sf::Vector2f(600, 600)), 50, 15,{ 9,4 }, "PlayerInventory"));
+		m_GUImanager->AddElemnt(new HotBar(Transform(sf::Vector2f(10, 10), sf::Vector2f(500, 60)), 50, 5, { 9,1 }, "HotBar"));
 
+		m_hotBar = static_cast<HotBar*>(m_GUImanager->getElementByName("HotBar"));
 		m_inventory = static_cast<Inventory*>(m_GUImanager->getElementByName("PlayerInventory"));
 		m_world->getPlayer()->SetInventory(m_inventory);
+
+		m_inventory->BindHotBar(m_hotBar);
 
 		m_blockController = new BlockController(m_inventory);
 	}
 	void CreateWindow() {
-		m_window.create(sf::VideoMode(Settings::windowSize.x, Settings::windowSize.y), "minecraft2D");
+		sf::ContextSettings settings;
+		settings.antialiasingLevel = 0.0;
+		m_window.create(sf::VideoMode(Settings::windowSize.x, Settings::windowSize.y), "minecraft2D",7, settings);
 	}
 	void LoadSettings() {
 		std::cout << "settings loading..." << std::endl;
@@ -448,11 +464,6 @@ public:
 
 		Settings::worldSize = std::stoi(m_settings["WorldSize"]);
 
-		Settings::persistence = std::stoi(m_settings["Persistence"]);
-		Settings::frequency = std::stoi(m_settings["Frequency"]);
-		Settings::amplitude = std::stoi(m_settings["Amplitude"]);
-		Settings::octaves = std::stoi(m_settings["Octaves"]);
-
 		Settings::seed = std::stoi(m_settings["Seed"]);
 
 		Settings::blockSize.x = std::stoi(m_settings["BlockSizeX"]);
@@ -489,6 +500,7 @@ private:
 	ThreadManager* m_threadManager;
 
 	Inventory* m_inventory;
+	HotBar* m_hotBar;
 	BlockController* m_blockController;
 	GuiManager* m_GUImanager;
 

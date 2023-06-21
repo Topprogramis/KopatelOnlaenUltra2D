@@ -67,15 +67,15 @@ void Player::FixedUpdate() {
 
 	newPos += Settings::windowSize * 0.5f;
 
-	Settings::threadManager->AddCommand("main", new UpdatePosCommand(this, newPos));
+	Settings::threadManager->TryAddCommand("main", new UpdatePosCommand(this, newPos));
 	b2Vec2 playerVelocity = m_playerBody->GetLinearVelocity();
 
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
-		m_playerBody->SetLinearVelocity(b2Vec2(-60.f * (Settings::physicUpdateTime/500.f), playerVelocity.y));
+		m_playerBody->SetLinearVelocity(b2Vec2(-30.f * (Settings::physicUpdateTime/1000.f), playerVelocity.y));
 		m_veiwDirection = -1;
 	}
 	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
-		m_playerBody->SetLinearVelocity(b2Vec2(60.f * (Settings::physicUpdateTime / 500.f), playerVelocity.y));
+		m_playerBody->SetLinearVelocity(b2Vec2(30.f * (Settings::physicUpdateTime /1000.f), playerVelocity.y));
 		m_veiwDirection = 1;
 	}
 	else if (playerVelocity.x != 0) {
@@ -83,7 +83,7 @@ void Player::FixedUpdate() {
 	}
 
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space) && m_onGround && playerVelocity.y>=0.f) {
-		m_playerBody->ApplyLinearImpulseToCenter({ 0,-3.f * (Settings::physicUpdateTime / 500.f) }, true);
+		m_playerBody->ApplyLinearImpulseToCenter({ 0,-10.f * (Settings::physicUpdateTime / 1000.f) }, true);
 		m_onGround = false;
 	}
 

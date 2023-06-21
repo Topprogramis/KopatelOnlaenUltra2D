@@ -5,10 +5,27 @@
 #include"Action.h"
 #include"Triangulate.h"
 
+struct Ore {
+	int id;
+	int maxSize;
+	int minHeight, maxHeight;
+	int countPerChunk;
+};
+
+struct Layer {
+	int blockId;
+	int layerSize;
+};
 
 struct Biome {
 	std::string name;
-	int grassId, groundId, stoneId;
+	std::vector<Layer> layers;
+	std::vector<Ore> ores;
+
+	int persistence = 1;
+	int frequency = 3;
+	int amplitude = 2;
+	int octaves = 10;
 };
 
 
@@ -106,7 +123,7 @@ public:
 		m_OnChnange = state;
 	}
 	bool IsChange() {
-		return m_OnChnange;
+		return m_OnChnange.load();
 	}
 
 	//col change
@@ -187,7 +204,7 @@ public:
 
 	//chunk rebilding
 	void BuildChunk() {
-		if (m_OnChnange) {
+		if (m_OnChnange.load()) {
 			OnChange();
 		}
 
@@ -202,7 +219,7 @@ public:
 
 	//physics
 	void PhysicUpdate() {
-		if (m_OnCollisionChange) {
+		if (m_OnCollisionChange.load()) {
 			OnCollisionChange();
 		}
 	}
@@ -260,7 +277,7 @@ private:
 	std::vector<Block*> m_flyingObjects;
 
 	//rebuild
-	bool m_OnChnange = false, m_OnCollisionChange = false;
+	std::atomic<bool> m_OnChnange = false, m_OnCollisionChange = false;
 
 	void OnChange();
 	void OnCollisionChange();

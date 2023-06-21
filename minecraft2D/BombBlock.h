@@ -46,7 +46,6 @@ public:
 				}
 
 				std::unique_lock<std::mutex> lock(Settings::world->w_mutex);
-				Settings::world->condition.wait(lock);
 
 				//if(Settings::world->getFlyingObjectsListPtr()->size()> selectBlockInd)
 
@@ -55,8 +54,6 @@ public:
 
 				lock.unlock();
 
-				chunk->Change();
-
 				Explode(block, chunk);
 			}
 		}
@@ -64,7 +61,6 @@ public:
 			block->SetFly(true);
 
 			std::unique_lock<std::mutex> lock(Settings::world->w_mutex);
-			Settings::world->condition.wait(lock);
 
 			m_flyingBlock = FlyingBlock(block, Settings::world->getFlyingObjectsListPtr()->size());
 
@@ -75,7 +71,6 @@ public:
 			m_isDitonate = true;
 
 			m_time = 0.0f;
-			chunk->Change();
 		}
 	}
 	
@@ -130,7 +125,6 @@ public:
 		}
 
 		std::unique_lock<std::mutex> lock(Settings::world->w_mutex);
-		Settings::world->condition.wait(lock);
 
 		//if(Settings::world->getFlyingObjectsListPtr()->size()> selectBlockInd)
 

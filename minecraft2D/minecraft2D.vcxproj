@@ -144,6 +144,7 @@
     <ClCompile Include="BlockController.cpp" />
     <ClCompile Include="Chunk.cpp" />
     <ClCompile Include="GuiCommands.cpp" />
+    <ClCompile Include="HotBar.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="Settings.cpp" />
@@ -163,6 +164,7 @@
     <ClInclude Include="Block.h" />
     <ClInclude Include="BlockController.h" />
     <ClInclude Include="BombBlock.h" />
+    <ClInclude Include="Cell.hpp" />
     <ClInclude Include="Chunk.hpp" />
     <ClInclude Include="CollisionEvents.hpp" />
     <ClInclude Include="Command.hpp" />
@@ -170,6 +172,7 @@
     <ClInclude Include="ContactListener.hpp" />
     <ClInclude Include="FlyingBlock.h" />
     <ClInclude Include="GuiCommands.h" />
+    <ClInclude Include="HotBar.h" />
     <ClInclude Include="include.h" />
     <ClInclude Include="Inventory.h" />
     <ClInclude Include="MusicBlock.h" />
@@ -220,6 +223,7 @@
     <Import Project="..\packages\glm.0.9.9.800\build\native\glm.targets" Condition="Exists('..\packages\glm.0.9.9.800\build\native\glm.targets')" />
     <Import Project="..\packages\Box2D.2.3.0\build\native\Box2D.targets" Condition="Exists('..\packages\Box2D.2.3.0\build\native\Box2D.targets')" />
     <Import Project="..\packages\pugixml.1.13.0\build\native\pugixml.targets" Condition="Exists('..\packages\pugixml.1.13.0\build\native\pugixml.targets')" />
+    <Import Project="..\packages\rapidjson.1.0.2\build\native\rapidjson.targets" Condition="Exists('..\packages\rapidjson.1.0.2\build\native\rapidjson.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -237,5 +241,6 @@
     <Error Condition="!Exists('..\packages\glm.0.9.9.800\build\native\glm.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\glm.0.9.9.800\build\native\glm.targets'))" />
     <Error Condition="!Exists('..\packages\Box2D.2.3.0\build\native\Box2D.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Box2D.2.3.0\build\native\Box2D.targets'))" />
     <Error Condition="!Exists('..\packages\pugixml.1.13.0\build\native\pugixml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\pugixml.1.13.0\build\native\pugixml.targets'))" />
+    <Error Condition="!Exists('..\packages\rapidjson.1.0.2\build\native\rapidjson.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\rapidjson.1.0.2\build\native\rapidjson.targets'))" />
   </Target>
 </Project>

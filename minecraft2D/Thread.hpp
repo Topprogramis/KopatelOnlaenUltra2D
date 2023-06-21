@@ -26,6 +26,9 @@ public:
 	void AddToEventPoll(ICommand* command) {
 		m_commandPoll.Push(command);
 	}
+	bool TryAddToEventPoll(ICommand* command) {
+		return m_commandPoll.TryPush(command);
+	}
 	void ExcuteCommands() {
 		m_commandPoll.ExcuteAll();
 	}

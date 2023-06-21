@@ -47,7 +47,7 @@ public:
 
 		doubleTexture.update(m_tx->getTexture());
 
-		Settings::threadManager->AddCommand("main", new SwapGuiTexture(this, &doubleTexture));
+		Settings::threadManager->TryAddCommand("main", new SwapGuiTexture(this, &doubleTexture));
 	}
 	void Draw() {
 		m_shape.setPosition(m_space.GlobalPosition());

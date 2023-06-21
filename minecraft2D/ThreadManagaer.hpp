@@ -25,6 +25,10 @@ public:
 	void AddCommand(std::string name, ICommand* command) {
 		GetThreadByName(name)->AddToEventPoll(command);
 	}
+
+	bool TryAddCommand(std::string name, ICommand* command) {
+		return GetThreadByName(name)->TryAddToEventPoll(command);
+	}
 private:
 	std::vector<Thread*> m_threads = {};
 	std::map<std::string, int> m_threadIds = {};

@@ -13,6 +13,8 @@
 #include<Box2D.h>
 
 #include<pugixml.hpp>
+#include<rapidjson/document.h>
+#include<rapidjson/reader.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -48,11 +50,6 @@ public:
 	static int physicUpdateTime;
 
 	static int seed;
-
-	static int persistence;
-	static int frequency;
-	static int amplitude;
-	static int octaves;
 
 	static sf::Vector2f blockSize;
 	static sf::Vector2f textureResolution ;

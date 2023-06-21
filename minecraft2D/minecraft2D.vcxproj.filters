@@ -120,6 +120,12 @@
     <Filter Include="Source\Game\Core\ThreadManager\Thread">
       <UniqueIdentifier>{f3e7dce7-8fe6-41eb-bb93-afc7230c7f8e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Core\Ui\UiElements\Inventory\hotbar">
+      <UniqueIdentifier>{e24db32f-8db1-42d5-8f31-cfd05eda828b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Core\Ui\UiElements\Inventory\Cell">
+      <UniqueIdentifier>{521774fd-f8ad-4aeb-815c-ad8fe4e6f46c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -172,6 +178,9 @@
     </ClCompile>
     <ClCompile Include="GuiCommands.cpp">
       <Filter>Source\Game\Core\ThreadManager\Comands</Filter>
+    </ClCompile>
+    <ClCompile Include="HotBar.cpp">
+      <Filter>Source\Game\Core\Ui\UiElements\Inventory\hotbar</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -304,6 +313,12 @@
     </ClInclude>
     <ClInclude Include="PlayerComands.hpp">
       <Filter>Source\Game\Core\ThreadManager\Comands</Filter>
+    </ClInclude>
+    <ClInclude Include="HotBar.h">
+      <Filter>Source\Game\Core\Ui\UiElements\Inventory\hotbar</Filter>
+    </ClInclude>
+    <ClInclude Include="Cell.hpp">
+      <Filter>Source\Game\Core\Ui\UiElements\Inventory\Cell</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -9,10 +9,16 @@ struct BlockReplace {
 	int blockInd;
 };
 
+
+struct WroldGenerationSettings {
+	std::vector<Biome> m_biomes;
+};
+
 class World {
 public:
 	World(sf::RenderWindow* wiondow = nullptr);
 
+	void LoadGenerationSettings();
 	void LoadBlocks();
 
 	Chunk* getChunk(int chunkId);
@@ -65,11 +71,13 @@ public:
 private:
 	sf::RenderWindow* m_window;
 
-	std::vector<Biome> m_biomse;
+	WroldGenerationSettings m_settings;
 
 	std::vector<BlockReplace> m_data = {};
 	std::vector<Chunk>m_chunks = {};
 	std::vector<FlyingBlock*> m_flyingBlocks;
+
+	std::vector<Biome> m_biomes = {};
 
 	std::condition_variable m_cv;
 

@@ -23,10 +23,12 @@ bool Chunk::hasNBlockRight(int x, int y) {
 }
 
 void Chunk::Change(bool state) {
-	Settings::threadManager->AddCommand("chunkUpdate", new ChunkBuildChangeCommand(this, state));
+	m_OnChnange.store(state);
+	//Settings::threadManager->AddCommand("chunkUpdate", new ChunkBuildChangeCommand(this, state));
 }
 void Chunk::ChangeCol(bool state) {
-	Settings::threadManager->AddCommand("physicUpdate", new ChunkColChangeCommand(this, state));
+	m_OnCollisionChange.store(state);
+	//Settings::threadManager->AddCommand("physicUpdate", new ChunkColChangeCommand(this, state));
 }
 
 
@@ -76,15 +78,16 @@ void Chunk::OnChange() {
 			//creat colliders
 			bool wasCollison = false;
 
-			BlockCollision col;
-			col.block = &m_blocks[y][x];
-			col.up = hasNBlockUp(x, y);
-			col.down = hasNBlockDown(x, y);
-			col.left = hasNBlockLeft(x, y);
-			col.right = hasNBlockRight(x, y);
+				BlockCollision col;
+				col.block = &m_blocks[y][x];
+				col.up = hasNBlockUp(x, y);
+				col.down = hasNBlockDown(x, y);
+				col.left = hasNBlockLeft(x, y);
+				col.right = hasNBlockRight(x, y);
 
-			if (col.up || col.down || col.left || col.right)
-				m_currentCollisions.push_back(col);
+				if (col.up || col.down || col.left || col.right)
+					m_currentCollisions.push_back(col);
+			
 		}
 
 	}

@@ -1,0 +1,72 @@
+{
+	"biomes" : [ 
+		{
+			"name" : "lawn", 
+			"layers"  : [
+				{"blockId" : 1, "levelSize" : 100},
+				{"blockId" : 2, "levelSize" : 4},
+				{"blockId" : 3, "levelSize" : 0}
+			],
+			"ores"  : [
+				{"id" : 32, "maxSize" : 8, "minHeight" : 80,"maxHeight" : 120, "countPerChunk" : 5}, 
+				{"id" : 33, "maxSize" : 10, "minHeight" : 80,"maxHeight" : 120, "countPerChunk" : 5 }, 
+				{"id" : 34, "maxSize" : 20, "minHeight" : 80,"maxHeight" : 120, "countPerChunk" : 5 }
+			],
+			"persistence" : 1,
+			"frequency" : 3,
+			"amplitude" : 2,
+			"octaves" : 10
+		},
+		{
+			"name" : "desert", 
+			"layers"  : [
+				{"blockId" : 230, "levelSize" : 100},
+				{"blockId" : 176, "levelSize" : 4},
+				{"blockId" : 18, "levelSize" : 1}
+			],
+			"ores"  : [
+				{"id" : 32, "maxSize" : 8, "minHeight" : 80,"maxHeight" : 120, "countPerChunk" : 5}, 
+				{"id" : 33, "maxSize" : 10, "minHeight" : 80,"maxHeight" : 120, "countPerChunk" : 5 }, 
+				{"id" : 34, "maxSize" : 20, "minHeight" : 80,"maxHeight" : 120, "countPerChunk" : 5 }
+			],
+			"persistence" : 1,
+			"frequency" : 3,
+			"amplitude" : 1,
+			"octaves" : 10
+		},
+		{
+			"name" : "sakura", 
+			"layers"  : [
+				{"blockId" : 1, "levelSize" : 100},
+				{"blockId" : 2, "levelSize" : 4},
+				{"blockId" : 77, "levelSize" : 0}
+			],
+			"ores"  : [
+				{"id" : 32, "maxSize" : 8, "minHeight" : 80,"maxHeight" : 120, "countPerChunk" : 5}, 
+				{"id" : 33, "maxSize" : 10, "minHeight" : 80,"maxHeight" : 120, "countPerChunk" : 5 }, 
+				{"id" : 34, "maxSize" : 20, "minHeight" : 80,"maxHeight" : 120, "countPerChunk" : 5 }
+			],
+			"persistence" : 1,
+			"frequency" : 3,
+			"amplitude" : 2,
+			"octaves" : 10
+		},
+		{
+			"name" : "snow", 
+			"layers"  : [
+				{"blockId" : 1, "levelSize" : 100},
+				{"blockId" : 2, "levelSize" : 4},
+				{"blockId" : 68, "levelSize" : 0}
+			],
+			"ores"  : [
+				{"id" : 32, "maxSize" : 8, "minHeight" : 80,"maxHeight" : 120, "countPerChunk" : 5}, 
+				{"id" : 33, "maxSize" : 10, "minHeight" : 80,"maxHeight" : 120, "countPerChunk" : 5 }, 
+				{"id" : 34, "maxSize" : 20, "minHeight" : 80,"maxHeight" : 120, "countPerChunk" : 5 }
+			],
+			"persistence" : 1,
+			"frequency" : 3,
+			"amplitude" : 2,
+			"octaves" : 10
+		}
+	]
+} 

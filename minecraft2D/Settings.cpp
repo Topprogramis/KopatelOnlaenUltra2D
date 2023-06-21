@@ -2,11 +2,6 @@
 
 int Settings::seed = 1;
 
-int Settings::persistence = 1;
-int Settings::frequency = 1;
-int Settings::amplitude = 1;
-int Settings::octaves = 1;
-
 int Settings::worldSize = 10;
 int Settings::threadCount = 2;
 int Settings::fixedUpdateTime = 10;
@@ -39,20 +34,20 @@ void Settings::AddCol(std::string name) {
 
 
 float toGlPositionX(float x) {
-	return x/320;
+	return x/160;
 }
 float toGlPositionY(float y) {
-	return y/320;
+	return y/160;
 }
 b2Vec2 toGlPosition(sf::Vector2f pos) {
 	return { toGlPositionX(pos.x), toGlPositionY(pos.y) };
 }
 
 float toSfPositionX(float x) {
-	return x*320;
+	return x*160;
 }
 float toSfPositionY(float y) {
-	return y*320;
+	return y*160;
 }
 sf::Vector2f toSfPosition(b2Vec2 pos) {
 	return { toSfPositionX(pos.x), toSfPositionY(pos.y) };
