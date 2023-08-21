@@ -47,7 +47,7 @@ public:
 
 		doubleTexture.update(m_tx->getTexture());
 
-		Settings::threadManager->TryAddCommand("main", new SwapGuiTexture(this, &doubleTexture));
+		SwapTexture(&doubleTexture);
 	}
 	void Draw() {
 		m_shape.setPosition(m_space.GlobalPosition());
@@ -69,7 +69,7 @@ public:
 		if (e.type == sf::Event::MouseButtonPressed) {
 			for (auto element : m_elements) {
 				UiElement* enterElement;
-				if (element->IsEnter(sf::Vector2f(sf::Mouse::getPosition(*m_window)), enterElement)) {
+				if (element->IsEnter(sf::Vector2f(e.mouseButton.x,e.mouseButton.y), enterElement)) {
 					m_selectElement = enterElement;
 				}
 			}

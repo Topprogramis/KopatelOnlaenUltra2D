@@ -73,7 +73,7 @@ private:
 
 	void Init();
 
-	Cell* getCellByLocalPos(sf::Vector2f pos);
+	Cell* getCellByLocalPos(sf::Vector2f pos, sf::Vector2f size);
 
 	void CreatCells();
 	void LoadItems();

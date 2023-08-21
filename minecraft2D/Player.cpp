@@ -83,7 +83,7 @@ void Player::FixedUpdate() {
 	}
 
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space) && m_onGround && playerVelocity.y>=0.f) {
-		m_playerBody->ApplyLinearImpulseToCenter({ 0,-10.f * (Settings::physicUpdateTime / 1000.f) }, true);
+		m_playerBody->ApplyLinearImpulseToCenter({ 0,-8.f * (Settings::physicUpdateTime / 1000.f) }, true);
 		m_onGround = false;
 	}
 

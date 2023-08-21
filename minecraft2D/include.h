@@ -1,4 +1,6 @@
 #pragma once
+#pragma warning(disable : 4996)
+
 #include<SFML/Graphics.hpp>
 #include<SFML/Audio.hpp>
 #include<vector>
@@ -9,6 +11,10 @@
 #include<thread>
 #include<mutex>
 #include <future>
+#include <iomanip> 
+#include <sstream>
+#include <ctime>
+#include<random>
 
 #include<Box2D.h>
 
@@ -76,5 +82,7 @@ b2Vec2 toGlPosition(sf::Vector2f pos);
 float toSfPositionX(float x);
 float toSfPositionY(float y);
 sf::Vector2f toSfPosition(b2Vec2 pos);
+
+std::string getNowTimeAsString(std::string format);
 
 

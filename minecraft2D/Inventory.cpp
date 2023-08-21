@@ -118,10 +118,13 @@ void Inventory::OnExit(PointEventData data) {
 
 }
 void Inventory::OnStartDrag(PointEventData data) {
-	sf::Vector2f localPos = sf::Vector2f(sf::Mouse::getPosition(*Settings::window)) - UiElement::m_transform.ScreenPosition();
 
-	Cell* cell = getCellByLocalPos(localPos);
+	sf::Vector2f localPos = data.pos - UiElement::m_transform.ScreenPosition();
 
+	Cell* cell = getCellByLocalPos(localPos, {10,10});
+	if (int(cell != nullptr)) {
+		std::cout << cell->getItem().id << std::endl;
+	}
 	if (cell!=nullptr && cell->getItem().id != 0) {
 		std::unique_lock<std::recursive_mutex> lock(m_mutex);
 		m_dragObject.dragItem = cell->getItem();
@@ -130,13 +133,14 @@ void Inventory::OnStartDrag(PointEventData data) {
 		else
 			m_dragObject.count = 1;
 
-
+		m_dragObject.dragItemShape.setPosition(data.pos - sf::Vector2f((float)m_cellSize / 2, (float)m_cellSize / 2));
 		cell->PopItem(cell->getItem(),m_dragObject.count);
 
 		lock.unlock();
 
 		m_dragObject.startCell = cell;
 
+		m_dragObject.dragItemShape.setPosition(data.pos - sf::Vector2f((float)m_cellSize / 2, (float)m_cellSize / 2));
 		m_dragObject.dragItemShape.setTextureRect(sf::IntRect(Settings::textureResolution.x * (m_dragObject.dragItem.id % Settings::atlasSize.x), Settings::textureResolution.y * std::floor(m_dragObject.dragItem.id / Settings::atlasSize.y), Settings::textureResolution.x, Settings::textureResolution.y));
 		m_dragObject.dragItemShape.setFillColor(sf::Color::White);
 	}
@@ -149,7 +153,7 @@ void Inventory::OnDrag(PointEventData data) {
 void Inventory::OnEndDrag(PointEventData data) {
 	sf::Vector2f localPos = sf::Vector2f(sf::Mouse::getPosition(*Settings::window)) - UiElement::m_transform.ScreenPosition();
 
-	Cell* cell = getCellByLocalPos(localPos);
+	Cell* cell = getCellByLocalPos(localPos, {10,10});
 
 	std::unique_lock<std::recursive_mutex> lock(m_mutex);
 	if (cell != nullptr && cell->AddItem(m_dragObject.dragItem, m_dragObject.count)) {
@@ -182,9 +186,9 @@ Item Inventory::getSelect() {
 	return m_HotBar->getSelect();
 }
 
-Cell* Inventory::getCellByLocalPos(sf::Vector2f pos) {
+Cell* Inventory::getCellByLocalPos(sf::Vector2f pos,sf::Vector2f size) {
 	for (auto& i : m_cells) {
-		if (i->IsPointEnter(pos))
+		if (i->IsPointEnter(pos,size))
 			return i;
 	}
 	return nullptr;

@@ -55,7 +55,7 @@ public:
 	}
 
 	void Excute() override {
-		m_chunk->ChangeColInThisThread(m_state);
+		m_chunk->ChangeCol(m_state);
 	}
 private:
 	Chunk* m_chunk;

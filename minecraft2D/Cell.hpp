@@ -95,7 +95,7 @@ public:
 
 		if (getItem().id != 0) {
 			m_itemR.setTexture(m_item.m_atlas);
-			m_itemR.setTextureRect(sf::IntRect(Settings::textureResolution.x * (m_item.id % Settings::atlasSize.x) + 1, Settings::textureResolution.y * std::floor(m_item.id / Settings::atlasSize.y), Settings::textureResolution.x, Settings::textureResolution.y));
+			m_itemR.setTextureRect(sf::IntRect(Settings::textureResolution.x * (m_item.id % Settings::atlasSize.x), Settings::textureResolution.y * (int)std::floor(m_item.id / Settings::atlasSize.y) -1, Settings::textureResolution.x, Settings::textureResolution.y));
 			m_itemR.setFillColor(m_color);
 			m_itemR.setPosition(m_pos + (m_size - m_itemSize) * 0.5f);
 
@@ -118,9 +118,9 @@ public:
 
 
 
-	bool IsPointEnter(sf::Vector2f pos) {
-		return pos.x >= m_pos.x && pos.x <= m_pos.x + m_size.x &&
-			pos.y >= m_pos.y && pos.y <= m_pos.y + m_size.y;
+	bool IsPointEnter(sf::Vector2f pos, sf::Vector2f size = {1,1}) {
+		return pos.x + size.x >= m_pos.x && pos.x - size.x <= m_pos.x + m_size.x &&
+			pos.y + size.y >= m_pos.y && pos.y - size.y <= m_pos.y + m_size.y;
 	}
 
 

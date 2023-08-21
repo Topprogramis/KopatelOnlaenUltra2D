@@ -23,11 +23,11 @@ bool Chunk::hasNBlockRight(int x, int y) {
 }
 
 void Chunk::Change(bool state) {
-	m_OnChnange.store(state);
+	m_OnChnange.store(state,std::memory_order_relaxed);
 	//Settings::threadManager->AddCommand("chunkUpdate", new ChunkBuildChangeCommand(this, state));
 }
 void Chunk::ChangeCol(bool state) {
-	m_OnCollisionChange.store(state);
+	m_OnCollisionChange.store(state, std::memory_order_relaxed);
 	//Settings::threadManager->AddCommand("physicUpdate", new ChunkColChangeCommand(this, state));
 }
 
@@ -85,7 +85,7 @@ void Chunk::OnChange() {
 				col.left = hasNBlockLeft(x, y);
 				col.right = hasNBlockRight(x, y);
 
-				if (col.up || col.down || col.left || col.right)
+				if ((col.up || col.down || col.left || col.right) && col.block->GetData() != 0)
 					m_currentCollisions.push_back(col);
 			
 		}
@@ -145,5 +145,5 @@ void Chunk::OnCollisionChange() {
 		}
 	}
 
-	ChangeColInThisThread(false);
+	m_OnCollisionChange.store(false, std::memory_order_relaxed);
 }

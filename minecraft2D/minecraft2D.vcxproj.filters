@@ -126,6 +126,9 @@
     <Filter Include="Source\Game\Core\Ui\UiElements\Inventory\Cell">
       <UniqueIdentifier>{521774fd-f8ad-4aeb-815c-ad8fe4e6f46c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Core\Logger">
+      <UniqueIdentifier>{bc6693c7-eb8d-4ee7-abc4-59695a9dadd4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -181,6 +184,12 @@
     </ClCompile>
     <ClCompile Include="HotBar.cpp">
       <Filter>Source\Game\Core\Ui\UiElements\Inventory\hotbar</Filter>
+    </ClCompile>
+    <ClCompile Include="Logger.cpp">
+      <Filter>Source\Game\Core\Logger</Filter>
+    </ClCompile>
+    <ClCompile Include="CaveGenerator.cpp">
+      <Filter>Source\Game\Core\Random</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -319,6 +328,15 @@
     </ClInclude>
     <ClInclude Include="Cell.hpp">
       <Filter>Source\Game\Core\Ui\UiElements\Inventory\Cell</Filter>
+    </ClInclude>
+    <ClInclude Include="Logger.hpp">
+      <Filter>Source\Game\Core\Logger</Filter>
+    </ClInclude>
+    <ClInclude Include="LogWriteCommand.hpp">
+      <Filter>Source\Game\Core\ThreadManager\Comands</Filter>
+    </ClInclude>
+    <ClInclude Include="CaveGenerator.h">
+      <Filter>Source\Game\Core\Random</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

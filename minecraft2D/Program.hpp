@@ -5,6 +5,7 @@
 #include"BlockController.h"
 #include"ui/Animator.hpp"
 #include"ThreadManagaer.hpp"
+#include "LogWriteCommand.hpp"
 
 class Program {
 public:
@@ -13,24 +14,31 @@ public:
 	}
 
 	void Init() {
+		Logger();
+
+
 		LoadSettings();
 
 		m_threadManager = new ThreadManager();
 
 		Settings::threadManager = m_threadManager;
 
+		m_threadManager->AddThread(new Thread("log", std::bind(&Program::LogThread, this, std::placeholders::_1)));
 		m_threadManager->AddThread(new Thread("main", std::bind(&Program::Loop, this, std::placeholders::_1)));
 		m_threadManager->AddThread(new Thread("uiRender", std::bind(&Program::GuiLoop, this, std::placeholders::_1)));
 		m_threadManager->AddThread(new Thread("fixedUpdate", std::bind(&Program::FixedUpdate, this, std::placeholders::_1)));
 		m_threadManager->AddThread(new Thread("chunkUpdate", std::bind(&Program::ChunkBlocksUpdate, this, std::placeholders::_1)));
 		m_threadManager->AddThread(new Thread("physicUpdate", std::bind(&Program::PhysicUpdate, this, std::placeholders::_1)));
 		m_threadManager->AddThread(new Thread("animation", std::bind(&Program::AnimationUpdate, this, std::placeholders::_1)));
+	
 
 		Start();
 
 		Time::globalTimeManager = &m_time;
 
-		InitThreads();
+		m_initBarier.CompliteWork();
+
+		m_mainLock.UnLock();
 
 		m_threadManager->LaunchAll();
 
@@ -67,92 +75,124 @@ public:
 	void End() {
 		m_world->Save();
 	}
-
 	void Start() {
 		m_world = new World(&m_window);
 		Settings::window = &m_window;
 		Settings::program = this;
 	}
-
 	void StartAfterInit() {
 		m_inventory->Load();
 	}
 
 
 	void InitThreads() {
-		//animation thread
-		m_animationControlConv.notify_one();
+		m_threadManager->AddCommand("log", new LogWriteCommand(Log("------INIT THREADS------", Log::LogType::successful)));
 
-		std::mutex mAnimation;
-		std::unique_lock<std::mutex> lockAnimation(mAnimation);
-		m_animationConv.wait(lockAnimation);
-		lockAnimation.unlock();
+		m_animLock.UnLock();
+		m_guiLock.UnLock();
+		m_chunkUphateLock.UnLock();
+		m_physicLock.UnLock();
+		m_fixedUpdateLock.UnLock();
+		m_loggerLock.UnLock();
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		m_initBarier.Wait(7);
+	}
 
-		//gui thread
-		m_guiControlConv.notify_one();
+	void Loop(Thread* thread) {
+		m_mainLock.Wait();
 
-		std::mutex mGui;
-		std::unique_lock<std::mutex> lock(mGui);
-		m_guiConv.wait(lock);
-		lock.unlock();
+		InitThreads();
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		m_threadManager->AddCommand("log", new LogWriteCommand(Log("Creat window", Log::LogType::successful)));
 
-		//physic
-		m_physicControlConv.notify_one();
+		CreateWindow();
 
-		std::mutex mPhysic;
-		std::unique_lock<std::mutex> lock2(mPhysic);
-		m_physicConv.wait(lock2);
-		lock2.unlock();
+		m_launchBarier.Wait(6);
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		m_threadManager->AddCommand("log", new LogWriteCommand(Log("------LAUNCH THREADS------", Log::LogType::successful)));
 
-		//fixed update
-		m_fixedControlConv.notify_one();
+		std::cout << "Launch thread init successful" << std::endl;
 
-		std::mutex mFixed;
-		std::unique_lock<std::mutex> lock3(mFixed);
-		m_fixedConv.wait(lock3);
-		lock3.unlock();
+		m_guiLock.UnLock();
+		m_animLock.UnLock();
+		m_chunkUphateLock.UnLock();
+		m_physicLock.UnLock();
+		m_fixedUpdateLock.UnLock();
+		m_loggerLock.UnLock();
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-		//block update
+		std::cout << "Main thread init successful" << std::endl;
 
-		m_blockControlUpdate.notify_one();
+		m_threadManager->AddCommand("log", new LogWriteCommand(Log("Main thread init successful", Log::LogType::successful)));
 
-		std::mutex mBlock;
-		std::unique_lock<std::mutex> lock4(mBlock);
-		m_blockUpdate.wait(lock4);
-		lock4.unlock();
+		StartAfterInit();
 
-		//animation thread
-		m_mainControlConv.notify_one();
 
-		std::mutex m;
-		std::unique_lock<std::mutex> lock8(m);
-		m_mainConv.wait(lock8);
-		lock8.unlock();
+		while (m_run || m_fixedRun || m_chunkRun || m_physicRun) {
+			thread->ResetClock();
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			m_animLock.UnLock();
+			m_chunkUphateLock.UnLock();
+			m_physicLock.UnLock();
+			m_fixedUpdateLock.UnLock();
+			m_guiLock.UnLock();
+			m_loggerLock.UnLock();
+
+			m_sinhBarier.Wait(6,200);
+
+			thread->ExcuteCommands();
+
+			sf::Event e;
+			while (m_window.pollEvent(e)) {
+				ProcessEvent(e);
+				m_GUImanager->HandleEvnet(e);
+			}
+
+			m_window.clear();
+
+			m_world->Draw();
+
+			m_blockController->Draw();
+			m_GUImanager->Draw();
+
+			m_window.display();
+
+			m_endWorkThreadCount = 0;
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(std::max(1,Settings::fixedUpdateTime - (int)thread->getElapseTime())));
+
+			m_deltaTime = (float)thread->getElapseTime() / 100.f;
+
+		}
+
+		m_threadManager->AddCommand("log", new LogWriteCommand(Log("Main thread end", Log::LogType::successful)));;
+
+		m_world->Save();
+
+		m_window.close();
+
+		//d::terminate();
 	}
 
 	void GuiLoop(Thread* thread) {
-		std::mutex m;
-		std::unique_lock<std::mutex> lock(m);
-		m_guiControlConv.wait(lock);
-		lock.unlock();
+		std::cout << "gui start" << std::endl;
 
-		InitGui();
-
-		std::this_thread::sleep_for(std::chrono::milliseconds(50));
-
-		m_guiConv.notify_one();
+ 
+		m_initBarier.CompliteWork();
+		m_guiLock.Wait();
 
 		std::cout << "GUI thread init successful" << std::endl;
+		
+		InitGui();
+
+		std::cout << "GUI thread init successful" << std::endl;
+
+		m_threadManager->AddCommand("log", new LogWriteCommand(Log("GUI thread init successful", Log::LogType::successful)));
+
+		m_launchBarier.CompliteWork();
+		m_guiLock.Wait();
+
+		m_threadManager->AddCommand("log", new LogWriteCommand(Log("GUI thread launch successful", Log::LogType::successful)));
 
 		while (m_run)
 		{
@@ -163,82 +203,26 @@ public:
 			m_GUImanager->Update();
 			m_GUImanager->DrawUiElements();
 
-			std::this_thread::sleep_for(std::chrono::milliseconds(15 - (int)thread->getElapseTime()));
+			m_sinhBarier.CompliteWork();
+			m_guiLock.Wait();
 		}
 
-		std::cout << "GUI thread end" << std::endl;
+	    m_threadManager->AddCommand("log", new LogWriteCommand(Log("GUI thread end", Log::LogType::successful)));
 	}
-
-	void Loop(Thread* thread) {
-
-		CreateWindow();
-
-		std::mutex m;
-		std::unique_lock<std::mutex> lock(m);
-
-		m_mainControlConv.wait(lock);
-		lock.unlock();
-		m_mainConv.notify_one();
-
-		std::cout << "Main thread init successful" << std::endl;
-
-		StartAfterInit();
-
-
-		while (m_run || m_fixedRun || m_chunkRun || m_physicRun) {
-			thread->ResetClock();
-
-			thread->ExcuteCommands();
-
-			sf::Event e;
-			while (m_window.pollEvent(e)) {
-				ProcessEvent(e);
-				m_GUImanager->HandleEvnet(e);
-			}
-
-
-			m_window.clear();
-
-			m_world->Draw();
-			m_blockController->Draw();
-			m_GUImanager->Draw();
-
-			m_window.display();
-
-
-
-			std::this_thread::sleep_for(std::chrono::milliseconds(15 - (int)thread->getElapseTime()));
-
-		}
-
-		std::cout << "Main thread end" << std::endl;
-
-
-
-		//	m_world->Save();
-
-		m_window.close();
-
-		//d::terminate();
-	}
-
-	void Update() {
-
-	}
-
 	void AnimationUpdate(Thread* thread) {
-		std::mutex m;
-		std::unique_lock<std::mutex> lock(m);
-		m_animationControlConv.wait(lock);
-		lock.unlock();
+		m_initBarier.CompliteWork();
+		m_animLock.Wait();
 
-		float time = 0.0f;
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+		m_animators = {};
 
-		m_animationConv.notify_one();
 
-		std::cout << "Animation update thread init successful" << std::endl;
+		m_threadManager->AddCommand("log", new LogWriteCommand(Log("Animation update thread init successful", Log::LogType::successful)));
+
+		m_launchBarier.CompliteWork();
+		m_animLock.Wait();
+
+		m_threadManager->AddCommand("log", new LogWriteCommand(Log("Animation update thread launch successful", Log::LogType::successful)));
 
 		while (m_fixedRun) {
 			thread->ResetClock();
@@ -248,54 +232,46 @@ public:
 			for (auto& i : m_animators)
 				i->Process();
 
-			if ((int)thread->getElapseTime() >= 10)
-				std::cout << "anim" << std::endl;
-
-			std::this_thread::sleep_for(std::chrono::milliseconds(Settings::fixedUpdateTime - (int)thread->getElapseTime()));
+			m_sinhBarier.CompliteWork();
+			m_animLock.Wait();
 		}
 
-		std::cout << "Animation update thread end" << std::endl;
+		m_threadManager->AddCommand("log", new LogWriteCommand(Log("Animation update thread end", Log::LogType::successful)));
 	}
-	void EventThread(Thread* thread) {
-		std::mutex m;
-		std::unique_lock<std::mutex> lock(m);
-		m_eventControlConv.wait(lock);
-		lock.unlock();
+	void LogThread(Thread* thread) {
+		m_initBarier.CompliteWork();
+		m_loggerLock.Wait();
 
-		float time = 0.0f;
+		m_threadManager->AddCommand("log", new LogWriteCommand(Log("Log update thread init successful", Log::LogType::successful)));
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+		m_launchBarier.CompliteWork();
+		m_loggerLock.Wait();
 
-		m_eventConv.notify_one();
+		Logger::logger->ReOpen();
 
-		std::cout << "Event thread init successful" << std::endl;
+		m_threadManager->AddCommand("log", new LogWriteCommand(Log("Log update thread launch successful", Log::LogType::successful)));
 
 		while (m_run) {
-			std::unique_lock<std::recursive_mutex> lock(m_eventMutex);
-			std::vector<sf::Event> poll = m_poll;
-			m_poll.clear();
-			lock.unlock();
-			for (auto& e : poll) {
-				ProcessEvent(e);
-				m_GUImanager->HandleEvnet(e);
-			}
+			thread->ResetClock();
+
+			thread->ExcuteCommands();
+	
+			m_sinhBarier.CompliteWork();
+			m_loggerLock.Wait();
 		}
 
-		std::cout << "Event thread end" << std::endl;
+		m_threadManager->AddCommand("log", new LogWriteCommand(Log("Log thread end", Log::LogType::successful)));
 	}
 	void FixedUpdate(Thread* thread) {
-		std::mutex m;
-		std::unique_lock<std::mutex> lock(m);
-		m_fixedControlConv.wait(lock);
-		lock.unlock();
+		m_initBarier.CompliteWork();
+		m_fixedUpdateLock.Wait();
 
-		float time = 0.0f;
+		m_threadManager->AddCommand("log", new LogWriteCommand(Log("Fixed update thread init successful", Log::LogType::successful)));
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+		m_launchBarier.CompliteWork();
+		m_fixedUpdateLock.Wait();
 
-		m_fixedConv.notify_one();
-
-		std::cout << "Fixed update thread init successful" << std::endl;
+		m_threadManager->AddCommand("log", new LogWriteCommand(Log("Fixed update thread launch successful", Log::LogType::successful)));
 
 		while (m_fixedRun) {
 			thread->ResetClock();
@@ -311,28 +287,23 @@ public:
 				m_interact = false;
 			}
 
-			if ((int)thread->getElapseTime() >= 10)
-				std::cout << "fixed thread" << std::endl;
+			m_sinhBarier.CompliteWork();
+			m_fixedUpdateLock.Wait();
 
-			std::this_thread::sleep_for(std::chrono::milliseconds(Settings::fixedUpdateTime - (int)thread->getElapseTime()));
 		}
 
-		std::cout << "Fixed update thread end" << std::endl;
+		m_threadManager->AddCommand("log", new LogWriteCommand(Log("Fixed update thread end", Log::LogType::successful)));
 	}
-
 	void ChunkBlocksUpdate(Thread* thread) {
-		std::mutex m;
-		std::unique_lock<std::mutex> lock(m);
-		m_blockControlUpdate.wait(lock);
-		lock.unlock();
+		m_initBarier.CompliteWork();
+		m_chunkUphateLock.Wait();
 
-		float time = 0.0f;
+		m_threadManager->AddCommand("log", new LogWriteCommand(Log("Chunk update thread init successful", Log::LogType::successful)));
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+		m_launchBarier.CompliteWork();
+		m_chunkUphateLock.Wait();
 
-		m_blockUpdate.notify_one();
-
-		std::cout << "Chunk update thread init successful" << std::endl;
+		m_threadManager->AddCommand("log", new LogWriteCommand(Log("Chunk update thread lauch successful", Log::LogType::successful)));
 
 		while (m_chunkRun) {
 			thread->ResetClock();
@@ -340,37 +311,41 @@ public:
 			thread->ExcuteCommands();
 			m_world->UpdateBlocks();
 
-			std::this_thread::sleep_for(std::chrono::milliseconds(Settings::fixedUpdateTime - (int)thread->getElapseTime()));
+			//std::this_thread::sleep_for(std::chrono::milliseconds(Settings::fixedUpdateTime - (int)thread->getElapseTime()));
+
+			m_sinhBarier.CompliteWork();
+			m_chunkUphateLock.Wait();
 		}
 
-		std::cout << "chunk update end" << std::endl;
+		m_threadManager->AddCommand("log", new LogWriteCommand(Log("chunk update end", Log::LogType::successful)));
 	}
-
 	void PhysicUpdate(Thread* thread) {
-		std::mutex m;
-		std::unique_lock<std::mutex> lock(m);
-		m_physicControlConv.wait(lock);
-		lock.unlock();
+		m_initBarier.CompliteWork();
+		m_physicLock.Wait();
 
-		float time = 0.0f;
+		m_threadManager->AddCommand("log", new LogWriteCommand(Log("physic thread init successful", Log::LogType::successful)));
 
-		m_physicConv.notify_one();
+		m_launchBarier.CompliteWork();
+		m_physicLock.Wait();
 
-		std::cout << "physic thread init successful" << std::endl;
+		m_threadManager->AddCommand("log", new LogWriteCommand(Log("physic thread lauch successful", Log::LogType::successful)));
 
 		while (m_physicRun) {
 			thread->ResetClock();
 
 			thread->ExcuteCommands();
 
-
 			m_world->PhysicUpdate();
-			
-			std::this_thread::sleep_for(std::chrono::milliseconds(Settings::physicUpdateTime - (int)thread->getElapseTime()));
 
+			m_sinhBarier.CompliteWork();
+			m_physicLock.Wait();
 		}
 
-		std::cout << "physic update end" << std::endl;
+		//m_threadManager->AddCommand("log", new LogWriteCommand(Log("physic update end", Log::LogType::successful)));
+	}
+
+	void Update() {
+
 	}
 
 	void ProcessEvent(sf::Event e) {
@@ -396,14 +371,7 @@ public:
 
 	}
 
-	void SelectNewBlock(sf::Event e) {
-	}
-	void LoadItems() {
-		
-	}
 	void InitGui() {
-
-
 		m_GUImanager = new GuiManager(sf::Vector2f(0, 0), Settings::windowSize, { 0,0,0,0 });
 		m_GUImanager->setWindow(&m_window);
 
@@ -504,6 +472,8 @@ private:
 	BlockController* m_blockController;
 	GuiManager* m_GUImanager;
 
+	std::atomic<int> m_endWorkThreadCount = 0;
+
 	std::vector<Animator*> m_animators;
 
 	std::map<std::string, std::string> m_settings;
@@ -516,8 +486,14 @@ private:
 
 	bool m_fixedRun = true, m_chunkRun = true, m_physicRun = true;
 
-	std::condition_variable m_mainConv, m_fixedConv, m_physicConv, m_blockUpdate, m_guiConv, m_eventConv, m_animationConv;
-	std::condition_variable  m_mainControlConv, m_fixedControlConv, m_physicControlConv, m_blockControlUpdate, m_guiControlConv, m_eventControlConv, m_animationControlConv;
+	float m_deltaTime =0.0f;
+
+	
+	ThreadBarier m_initBarier, m_launchBarier, m_sinhBarier;
+	ThreadLock m_animLock, m_guiLock, m_physicLock, m_fixedUpdateLock, m_chunkUphateLock, m_mainLock, m_loggerLock;
+
+	
+
 
 	std::recursive_mutex m_eventMutex;
 

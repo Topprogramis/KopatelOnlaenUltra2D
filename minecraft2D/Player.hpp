@@ -31,7 +31,7 @@ public:
 	void Draw(sf::RenderWindow* window);
 
 	void OnCollisionEnter(CollisionData data) override {
-		if (data.collisionBId == Settings::GetColId("blockUpEdge")) {
+		if (data.collisionBId == Settings::GetColId("blockUpEdge") && data.contact->GetManifold()->localNormal ==b2Vec2 {0,-1}) {
 			m_onGround = true;
 		}	
 	}

@@ -1,38 +1,44 @@
 #pragma once
 #include"Command.hpp"
 
+typedef std::vector<ICommand*> commandBuffer;
+
 class CommandPoll {
 public:
 	CommandPoll() {
-
+		m_buffers.push_back({});
+		m_buffers.push_back({});
 	}
 
 	void Push(ICommand* command) {
 		std::unique_lock<std::mutex> lock(m_mutex);
-		m_commands.push_back(command);
+		m_buffers[currentWriteBuffer.load(std::memory_order_relaxed)].push_back(command);
 		lock.unlock();
 	}
 	bool TryPush(ICommand* command) {
-		if (!m_mutex.try_lock())
-			return false;
-
-		std::lock_guard<std::mutex> lock(m_mutex, std::adopt_lock);
-		m_commands.push_back(command);
+		m_buffers[currentWriteBuffer.load(std::memory_order_relaxed)].push_back(command);
 		return true;
 	}
 
 	void ExcuteAll() {
-		std::unique_lock<std::mutex> lock(m_mutex);
-		std::vector<ICommand*> commands = m_commands;
-		m_commands = std::vector<ICommand*>{};
-		lock.unlock();
+		std::vector<ICommand*> commands = m_buffers[currentReadBuffer.load(std::memory_order_relaxed)];
+		m_buffers[currentReadBuffer.load(std::memory_order_relaxed)].clear();
 
+		int readB = currentReadBuffer.load(std::memory_order_relaxed);
+		int writeB = currentWriteBuffer.load(std::memory_order_relaxed);
+
+		currentWriteBuffer.store(readB);
+		currentReadBuffer.store(writeB);
+
+	
 		for (auto& i : commands) {
 			i->Excute();
 		}
 	}
 private:
-	std::vector<ICommand*> m_commands;
+	std::vector<commandBuffer> m_buffers;
+
+	std::atomic<int> currentReadBuffer = 0, currentWriteBuffer = 1;
 
 	std::mutex m_mutex;
 };

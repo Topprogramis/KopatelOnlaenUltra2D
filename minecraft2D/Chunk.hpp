@@ -76,7 +76,8 @@ public:
 
 	//init
 	void Init() {
-		Change();
+		OnChange();
+		OnCollisionChange();
 	}
 
 	//transform
@@ -120,19 +121,16 @@ public:
 	//chunk change
 	void Change(bool state = true);
 	void ChangeInThisThread(bool state = true) {
-		m_OnChnange = state;
+		m_OnChnange.store(state, std::memory_order_relaxed);
 	}
 	bool IsChange() {
-		return m_OnChnange.load();
+		return m_OnChnange.load(std::memory_order_relaxed);
 	}
 
 	//col change
 	void ChangeCol(bool state = true);
-	void ChangeColInThisThread(bool state = true) {
-		m_OnCollisionChange = state;
-	}
 	bool IsColChange() {
-		return m_OnCollisionChange;
+		return m_OnCollisionChange.load(std::memory_order_relaxed);
 	}
 
 	//finding blocks
@@ -219,7 +217,7 @@ public:
 
 	//physics
 	void PhysicUpdate() {
-		if (m_OnCollisionChange.load()) {
+		if (m_OnCollisionChange.load(std::memory_order_relaxed)) {
 			OnCollisionChange();
 		}
 	}

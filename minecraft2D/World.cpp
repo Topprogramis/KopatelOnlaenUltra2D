@@ -5,6 +5,9 @@
 #include"FlyingBlock.h"
 #include"Perlin.hpp"
 #include"ContactListener.hpp"
+#include"ThreadManagaer.hpp"
+#include"LogWriteCommand.hpp"
+#include"CaveGenerator.h"
 
 BlockData World::blocks[256] = {};
 bool World::WasLoadBlocks = false;
@@ -37,6 +40,7 @@ World::World(sf::RenderWindow* window) {
 
 	m_player = new Player(sf::Vector2f(-(chunkSizeX * Settings::blockSize.x * Settings::worldSize) / 2, 0));
 
+	Settings::threadManager->AddCommand("log", new LogWriteCommand(Log("Terrain generation")));
 	std::cout << "Terrarion generation..." << std::endl;
 	std::cout << "--------------chunks--------------" << std::endl;
 	
@@ -54,7 +58,7 @@ World::World(sf::RenderWindow* window) {
 void World::LoadGenerationSettings() {
 	std::ifstream file;
 
-	file.open("D:\\Users\\Максим\\source\\repos\\Topprogramis\\KopatelOnlaenUltra2D\\minecraft2D\\saves\\generationSettings.txt.txt");
+	file.open("C:\\Users\\makst\\source\\repos\\Topprogramis\\KopatelOnlaenUltra2D\\minecraft2D\\saves\\generationSettings.txt.txt");
 	if (!file.is_open()) {
 		std::cout << "Save is not found. Please create in game files saves/world.txt" << std::endl;
 		return;
@@ -172,12 +176,10 @@ void World::Move(sf::Vector2f offset) {
 
 void World::Draw() {
 	m_window->draw(m_skyBoxShape);
-	//sf::RectangleShape sp = sf::RectangleShape({ 80, 80 });
-	//sp.setPosition({ body->GetPosition().x + m_player->getPosition().x ,body->GetPosition().y + m_player->getPosition().y});
+
 
 
 	for (int i = 0; i < Settings::worldSize; i++) {
-		m_chunks[i].Update();
 		m_chunks[i].Draw(m_window);
 	}
 
@@ -306,6 +308,10 @@ void World::GenerateLastChunk(int ind) {
 
 	int oldHeight = 70;
 
+	
+
+	auto caveNoise = PerlinNoise(currentBiome.persistence, currentBiome.frequency, currentBiome.amplitude, 16, Settings::seed);
+
 
 	for (int x = 0; x < chunkSizeX; x++) {
 		int grassHeight = int(noise.GetHeight(x + ind * 16, 0)) + oldHeight;
@@ -333,6 +339,25 @@ void World::GenerateLastChunk(int ind) {
 		}
 		oldHeight = grassHeight;
 	}
+
+	GenerationSettings genS;
+	genS.rows = chunkSizeX;
+	genS.cols = chunkSizeY;
+	genS.generation_count = 30;
+	genS.live_chance = 50;
+	genS.live_limit = { 4,8 };
+	genS.born_limit = { 2,3 };
+
+	//auto cave = GenerateCave(genS);
+
+	//for (int x = 0; x < chunkSizeX; x++) {
+	//	for (int y = oldHeight; y < chunkSizeY; y++) {
+	//		if (chunk->GetBlock(x, y)->GetData()->id != 0 && cave.data[x+(y* chunkSizeX)]) {
+	//			chunk->SetBlock({ x,y }, &blocks[0]);
+	//			
+	//		}
+	//	}
+	//}
 
 	for (auto& i : currentBiome.ores) {
 		for (int c = 0; c < i.countPerChunk; c++) {
@@ -382,6 +407,7 @@ void World::PhysicUpdate() {
 	m_player->FixedUpdate();
 
 	m_physicalWorld->Step(Settings::fixedUpdateTime / 100.f, 1, 1);
+
 	for (auto& i : m_chunks) {
 		i.PhysicUpdate();
 	}
@@ -395,7 +421,7 @@ void World::Save() {
 	m_player->SaveData();
 	std::ofstream saveFile;
 
-	saveFile.open("saves\\world.txt");
+	saveFile.open("C:\\Users\\makst\\source\\repos\\Topprogramis\\KopatelOnlaenUltra2D\\minecraft2D\\saves\\world.txt");
 	if (!saveFile.is_open()) {
 		std::cout << "Save is no open. Please create in game files saves/world.txt" << std::endl;
 		return;
@@ -445,10 +471,6 @@ void World::Save() {
 
 }
 void World::Load() {
-	for (auto i : m_chunks) {
-		i.Init();
-	}
-
 	std::ifstream saveFile;
 
 	saveFile.open("saves\\world.txt");
@@ -519,4 +541,5 @@ void World::Load() {
 		m_data.push_back(BlockReplace{ chunkId,pos,blockId });
 		m_chunks[chunkId].SetBlock(pos.x, pos.y, &blocks[blockId]);
 	}
+
 }
